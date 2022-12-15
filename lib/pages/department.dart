@@ -1,10 +1,11 @@
 import 'dart:developer';
 
 import 'package:crudapp/modal/department_modal.dart';
-import 'package:crudapp/refactor/alertbox.dart';
+import 'package:crudapp/refactor/alert.dart';
 import 'package:crudapp/refactor/snackbar.dart';
 import 'package:crudapp/Services/serviceapi.dart';
 import 'package:flutter/material.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class DepartmentPage extends StatefulWidget {
@@ -71,80 +72,92 @@ class _DepartmentPageState extends State<DepartmentPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 215, 238, 242),
-      floatingActionButton: FloatingActionButton(
-          onPressed: (() {
-            showDialog(
-              context: context,
-              builder: (cnt) {
-                return StatefulBuilder(
-                  builder: (BuildContext context,
-                      void Function(void Function()) setState) {
-                    return AlertDialog(
-                      actions: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            ElevatedButton(
+      floatingActionButton: FloatingActionButton.extended(
+        icon: const Icon(Icons.add),
+        label: Text(
+          'Add Department',
+          style: GoogleFonts.kreon(),
+        ),
+        onPressed: (() {
+          showDialog(
+            context: context,
+            builder: (cnt) {
+              return StatefulBuilder(
+                builder: (BuildContext context,
+                    void Function(void Function()) setState) {
+                  return AlertDialog(
+                    actions: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey,
+                                  side: const BorderSide(color: Colors.red)),
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child:
+                                  Text("CANCEL", style: GoogleFonts.kreon())),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 10),
+                            child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.grey,
-                                    side: const BorderSide(color: Colors.red)),
-                                onPressed: () {
-                                  Navigator.pop(context);
+                                    backgroundColor: Colors.green),
+                                onPressed: () async {
+                                  ServiceApi()
+                                      .create_department(
+                                    name: _namefieldcontroller.text,
+                                  )
+                                      .whenComplete(() {
+                                    Navigator.pop(context);
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        getdata().whenComplete(
+                                            () => Navigator.pop(context));
+                                        return const AlertPage(
+                                            alertmessage: 'Adding..');
+                                      },
+                                    ).whenComplete(() => getcreate_status());
+                                  });
                                 },
-                                child: const Text("CANCEL")),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 10),
-                              child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green),
-                                  onPressed: () async {
-                                    ServiceApi()
-                                        .create_department(
-                                      name: _namefieldcontroller.text,
-                                    )
-                                        .whenComplete(() {
-                                      Navigator.pop(context);
-                                      showDialog(
-                                        context: context,
-                                        builder: (BuildContext context) {
-                                          getdata().whenComplete(
-                                              () => Navigator.pop(context));
-                                          return const AlertPage(
-                                              alertmessage: 'Adding..');
-                                        },
-                                      ).whenComplete(() => getcreate_status());
-                                    });
-                                  },
-                                  child: const Text("ADD")),
-                            )
+                                child: Text("ADD", style: GoogleFonts.kreon())),
+                          )
+                        ],
+                      ),
+                    ],
+                    title:
+                        Text("Add new Department", style: GoogleFonts.kreon()),
+                    content: Form(
+                      child: SizedBox(
+                        height: 50,
+                        child: Column(
+                          children: [
+                            TextFormField(
+                                keyboardType: TextInputType.text,
+                                controller: _namefieldcontroller,
+                                decoration: InputDecoration(
+                                    hintText: 'Name',
+                                    hintStyle: GoogleFonts.kreon())),
                           ],
                         ),
-                      ],
-                      title: const Text("Add new Department"),
-                      content: Form(
-                        child: SizedBox(
-                          height: 50,
-                          child: Column(
-                            children: [
-                              TextFormField(
-                                  keyboardType: TextInputType.text,
-                                  controller: _namefieldcontroller,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Name',
-                                  )),
-                            ],
-                          ),
-                        ),
                       ),
-                    );
-                  },
-                );
-              },
-            );
-          }),
-          child: const Icon(Icons.add)),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        }),
+      ),
       appBar: AppBar(
-        title: const Text('Departments'),
+        title: Text(
+          'Departments',
+          style: GoogleFonts.kreon(
+            fontSize: 20,
+          ),
+        ),
       ),
       body: Column(
         children: [
@@ -165,15 +178,15 @@ class _DepartmentPageState extends State<DepartmentPage> {
                         height: 100,
                         width: 150,
                         child: Column(
-                          children: const [
+                          children: [
                             Text(
                               'Please Wait...',
-                              style: TextStyle(fontSize: 20),
+                              style: GoogleFonts.kreon(fontSize: 18),
                             ),
-                            SizedBox(
+                            const SizedBox(
                               height: 5,
                             ),
-                            CircularProgressIndicator(),
+                            const CircularProgressIndicator(),
                           ],
                         ),
                       ),
@@ -197,7 +210,12 @@ class _DepartmentPageState extends State<DepartmentPage> {
                                 mainAxisAlignment:
                                     MainAxisAlignment.spaceBetween,
                                 children: [
-                                  Text(newlist[index].name),
+                                  Text(
+                                    newlist[index].name,
+                                    style: GoogleFonts.kreon(
+                                      fontSize: 20,
+                                    ),
+                                  ),
                                   PopupMenuButton<int>(
                                     itemBuilder: (context) => [
                                       // PopupMenuItem 1
@@ -205,12 +223,15 @@ class _DepartmentPageState extends State<DepartmentPage> {
                                         value: 1,
                                         // row with 2 children
                                         child: Row(
-                                          children: const [
-                                            Icon(Icons.edit),
-                                            SizedBox(
+                                          children: [
+                                            const Icon(Icons.edit),
+                                            const SizedBox(
                                               width: 10,
                                             ),
-                                            Text("Update")
+                                            Text(
+                                              "Update",
+                                              style: GoogleFonts.kreon(),
+                                            )
                                           ],
                                         ),
                                       ),
@@ -219,12 +240,15 @@ class _DepartmentPageState extends State<DepartmentPage> {
                                         value: 2,
                                         // row with two children
                                         child: Row(
-                                          children: const [
-                                            Icon(Icons.delete),
-                                            SizedBox(
+                                          children: [
+                                            const Icon(Icons.delete),
+                                            const SizedBox(
                                               width: 10,
                                             ),
-                                            Text("Delete")
+                                            Text(
+                                              "Delete",
+                                              style: GoogleFonts.kreon(),
+                                            )
                                           ],
                                         ),
                                       ),
@@ -343,38 +367,101 @@ class _DepartmentPageState extends State<DepartmentPage> {
                                         );
                                         // if value 2 show dialog
                                       } else if (value == 2) {
-                                        ServiceApi()
-                                            .delete_department(
-                                                id: newlist[index]
-                                                    .id
-                                                    .toString())
-                                            .whenComplete(() {
-                                          getdel_status();
-                                          showDialog(
+                                        showDialog(
                                             context: context,
-                                            builder: (BuildContext context) {
-                                              getdata().whenComplete(
-                                                  () => Navigator.pop(context));
-                                              return const AlertPage(
-                                                  alertmessage: 'Deleting..');
-                                            },
-                                          ).whenComplete(() {
-                                            if (del_statuscode == 204) {
-                                              CustomSnackBar(
-                                                  context,
-                                                  const Text('Done Deleted'),
-                                                  Colors.green);
-                                            } else if (del_statuscode == 500) {
-                                              CustomSnackBar(
-                                                  context,
-                                                  const Text(
-                                                      'Cannot Delete !! Id is Used by Some Employee'),
-                                                  Colors.red);
-                                            } else {
-                                              log('Error');
-                                            }
-                                          });
-                                        });
+                                            builder: ((context) {
+                                              return AlertDialog(
+                                                title: const Text('Confirm'),
+                                                content: const Text(
+                                                    'Are You Sure to delete?'),
+                                                actions: [
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment.end,
+                                                    children: [
+                                                      ElevatedButton(
+                                                          style: ElevatedButton
+                                                              .styleFrom(
+                                                            backgroundColor:
+                                                                Colors.grey,
+                                                            side:
+                                                                const BorderSide(
+                                                                    color: Colors
+                                                                        .red),
+                                                          ),
+                                                          onPressed: () {
+                                                            Navigator.pop(
+                                                                context);
+                                                          },
+                                                          child: const Text(
+                                                              "CANCEL")),
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .only(left: 10),
+                                                        child: ElevatedButton(
+                                                            style: ElevatedButton
+                                                                .styleFrom(
+                                                                    backgroundColor:
+                                                                        Colors
+                                                                            .green),
+                                                            onPressed: () {
+                                                              ServiceApi()
+                                                                  .delete_department(
+                                                                      id: newlist[
+                                                                              index]
+                                                                          .id
+                                                                          .toString())
+                                                                  .whenComplete(
+                                                                      () {
+                                                                getdel_status();
+                                                                showDialog(
+                                                                  context:
+                                                                      context,
+                                                                  builder:
+                                                                      (BuildContext
+                                                                          context) {
+                                                                    getdata().whenComplete(() =>
+                                                                        Navigator.pop(
+                                                                            context));
+                                                                    return const AlertPage(
+                                                                        alertmessage:
+                                                                            'Deleting..');
+                                                                  },
+                                                                ).whenComplete(
+                                                                    () {
+                                                                  Navigator.pop(
+                                                                      context);
+                                                                  if (del_statuscode ==
+                                                                      204) {
+                                                                    CustomSnackBar(
+                                                                        context,
+                                                                        const Text(
+                                                                            'Done Deleted'),
+                                                                        Colors
+                                                                            .green);
+                                                                  } else if (del_statuscode ==
+                                                                      500) {
+                                                                    CustomSnackBar(
+                                                                        context,
+                                                                        const Text(
+                                                                            'Cannot Delete !! Id is Used by Some Employee'),
+                                                                        Colors
+                                                                            .red);
+                                                                  } else {
+                                                                    log('Error');
+                                                                  }
+                                                                });
+                                                              });
+                                                            },
+                                                            child: const Text(
+                                                                "YES")),
+                                                      )
+                                                    ],
+                                                  ),
+                                                ],
+                                              );
+                                            }));
                                       }
                                     },
                                   ),

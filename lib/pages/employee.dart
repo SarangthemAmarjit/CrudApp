@@ -1,14 +1,16 @@
 import 'dart:developer';
 
+import 'package:auto_route/auto_route.dart';
 import 'package:crudapp/modal/department_modal.dart';
 import 'package:crudapp/modal/designation_modal.dart';
 import 'package:crudapp/modal/employee_modal.dart';
-import 'package:crudapp/pages/employeedetail.dart';
-import 'package:crudapp/refactor/alertbox.dart';
+import 'package:crudapp/refactor/alert.dart';
 import 'package:crudapp/Services/serviceapi.dart';
 import 'package:crudapp/refactor/snackbar.dart';
+import 'package:crudapp/router/router.gr.dart';
 import 'package:flutter/material.dart';
 import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
+import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:shared_preferences/shared_preferences.dart';
@@ -26,20 +28,12 @@ class _EmployeesPageState extends State<EmployeesPage> {
   String? dropdownvalue22;
   String? dropdownvalue2;
 
-  String? menudrop;
-
   final TextEditingController _namefieldcontroller = TextEditingController();
-  final TextEditingController _designationfieldcontroller =
-      TextEditingController();
-  final TextEditingController _departmentfieldcontroller =
-      TextEditingController();
+
   String datetime = '';
 
   final TextEditingController _namefieldcontroller2 = TextEditingController();
-  final TextEditingController _designationfieldcontroller2 =
-      TextEditingController();
-  final TextEditingController _departmentfieldcontroller2 =
-      TextEditingController();
+
   String datetime2 = '';
   String datetime3 = '';
   String datetime4 = '';
@@ -137,8 +131,6 @@ class _EmployeesPageState extends State<EmployeesPage> {
     log(all_desid.toString());
   }
 
-  bool showloading = false;
-
   Widget _dataofbirth(String dob) {
     return Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -185,104 +177,109 @@ class _EmployeesPageState extends State<EmployeesPage> {
   Widget build(BuildContext context) {
     return Scaffold(
       backgroundColor: const Color.fromARGB(255, 215, 238, 242),
-      floatingActionButton: FloatingActionButton(
-          onPressed: (() {
-            showDialog(
-              context: context,
-              builder: (cnt) {
-                return StatefulBuilder(
-                  builder: (BuildContext context,
-                      void Function(void Function()) setState) {
-                    return AlertDialog(
-                      actions: [
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
-                          children: [
-                            ElevatedButton(
+      floatingActionButton: FloatingActionButton.extended(
+        label: Text(
+          'Add Employee',
+          style: GoogleFonts.kreon(),
+        ),
+        icon: const Icon(Icons.add),
+        onPressed: (() {
+          showDialog(
+            context: context,
+            builder: (cnt) {
+              return StatefulBuilder(
+                builder: (BuildContext context,
+                    void Function(void Function()) setState) {
+                  return AlertDialog(
+                    actions: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.end,
+                        children: [
+                          ElevatedButton(
+                              style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.grey,
+                                  side: const BorderSide(color: Colors.red)),
+                              onPressed: () {
+                                Navigator.pop(context);
+                              },
+                              child: const Text("CANCEL")),
+                          Padding(
+                            padding: const EdgeInsets.only(left: 10),
+                            child: ElevatedButton(
                                 style: ElevatedButton.styleFrom(
-                                    backgroundColor: Colors.grey,
-                                    side: const BorderSide(color: Colors.red)),
-                                onPressed: () {
-                                  Navigator.pop(context);
+                                    backgroundColor: Colors.green),
+                                onPressed: () async {
+                                  await ServiceApi()
+                                      .create_employee(
+                                          name: _namefieldcontroller.text,
+                                          desId: dropdownvalue11!,
+                                          depId: dropdownvalue22!,
+                                          dob: datetime)
+                                      .whenComplete(() {
+                                    Navigator.pop(context);
+
+                                    showDialog(
+                                      context: context,
+                                      builder: (BuildContext context) {
+                                        getdata().whenComplete(
+                                            () => Navigator.pop(context));
+
+                                        return const AlertPage(
+                                            alertmessage: 'Adding..');
+                                      },
+                                    ).whenComplete(() => getcreate_status());
+                                  });
+                                  log(create_statuscode.toString());
+
+                                  setState(() {
+                                    all_desid = [];
+                                    all_depid = [];
+                                    all_dep = [];
+                                    all_des = [];
+                                  });
                                 },
-                                child: const Text("CANCEL")),
-                            Padding(
-                              padding: const EdgeInsets.only(left: 10),
-                              child: ElevatedButton(
-                                  style: ElevatedButton.styleFrom(
-                                      backgroundColor: Colors.green),
-                                  onPressed: () async {
-                                    await ServiceApi()
-                                        .create_employee(
-                                            name: _namefieldcontroller.text,
-                                            desId: dropdownvalue11!,
-                                            depId: dropdownvalue22!,
-                                            dob: datetime)
-                                        .whenComplete(() {
-                                      Navigator.pop(context);
-
-                                      showDialog(
-                                        context: context,
-                                        builder: (BuildContext context) {
-                                          getdata().whenComplete(
-                                              () => Navigator.pop(context));
-
-                                          return const AlertPage(
-                                              alertmessage: 'Adding..');
-                                        },
-                                      ).whenComplete(() => getcreate_status());
-                                    });
-                                    log(create_statuscode.toString());
-
-                                    setState(() {
-                                      all_desid = [];
-                                      all_depid = [];
-                                      all_dep = [];
-                                      all_des = [];
-                                    });
-                                  },
-                                  child: const Text("ADD")),
-                            )
-                          ],
-                        ),
-                      ],
-                      title: const Text("Add new Employee"),
-                      content: Form(
-                        child: SizedBox(
-                          height: 250,
-                          child: Column(
-                            children: [
-                              TextFormField(
-                                  keyboardType: TextInputType.text,
-                                  controller: _namefieldcontroller,
-                                  decoration: const InputDecoration(
-                                    hintText: 'Name',
-                                  )),
-                              _dataofbirth(datetime2),
-                              Container(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 13),
-                                decoration: BoxDecoration(
-                                    color: const Color.fromARGB(
-                                        255, 240, 237, 237),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                        color: const Color.fromARGB(
-                                            255, 225, 222, 222))),
+                                child: const Text("ADD")),
+                          )
+                        ],
+                      ),
+                    ],
+                    title: const Text("Add new Employee"),
+                    content: Form(
+                      child: SizedBox(
+                        height: 250,
+                        child: Column(
+                          children: [
+                            TextFormField(
+                                keyboardType: TextInputType.text,
+                                controller: _namefieldcontroller,
+                                decoration: const InputDecoration(
+                                  hintText: 'Name',
+                                )),
+                            _dataofbirth(datetime2),
+                            Container(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 13),
+                              decoration: BoxDecoration(
+                                  color:
+                                      const Color.fromARGB(255, 240, 237, 237),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: const Color.fromARGB(
+                                          255, 225, 222, 222))),
+                              child: FittedBox(
                                 child: Row(
                                   children: [
                                     const Text('Designation :'),
-                                    const SizedBox(
-                                      width: 10,
-                                    ),
                                     DropdownButtonHideUnderline(
                                       child: DropdownButton2(
+                                        dropdownPadding:
+                                            const EdgeInsets.only(left: 25),
                                         dropdownDecoration: BoxDecoration(
                                             borderRadius:
                                                 BorderRadius.circular(10)),
                                         dropdownDirection:
                                             DropdownDirection.left,
-                                        dropdownWidth: 200,
+                                        dropdownWidth: 250,
                                         hint: const Text('Select'),
                                         value: dropdownvalue1,
                                         icon: const Icon(
@@ -307,19 +304,21 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                   ],
                                 ),
                               ),
-                              const SizedBox(
-                                height: 10,
-                              ),
-                              Container(
-                                padding:
-                                    const EdgeInsets.symmetric(horizontal: 13),
-                                decoration: BoxDecoration(
-                                    color: const Color.fromARGB(
-                                        255, 240, 237, 237),
-                                    borderRadius: BorderRadius.circular(12),
-                                    border: Border.all(
-                                        color: const Color.fromARGB(
-                                            255, 225, 222, 222))),
+                            ),
+                            const SizedBox(
+                              height: 10,
+                            ),
+                            Container(
+                              padding:
+                                  const EdgeInsets.symmetric(horizontal: 13),
+                              decoration: BoxDecoration(
+                                  color:
+                                      const Color.fromARGB(255, 240, 237, 237),
+                                  borderRadius: BorderRadius.circular(12),
+                                  border: Border.all(
+                                      color: const Color.fromARGB(
+                                          255, 225, 222, 222))),
+                              child: FittedBox(
                                 child: Row(
                                   children: [
                                     const Text("Department :"),
@@ -335,7 +334,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                             const EdgeInsets.only(left: 25),
                                         dropdownDirection:
                                             DropdownDirection.left,
-                                        dropdownWidth: 200,
+                                        dropdownWidth: 250,
                                         hint: const Text('Select'),
                                         value: dropdownvalue2,
                                         // Initial Value
@@ -366,19 +365,23 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                   ],
                                 ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         ),
                       ),
-                    );
-                  },
-                );
-              },
-            );
-          }),
-          child: const Icon(Icons.add)),
+                    ),
+                  );
+                },
+              );
+            },
+          );
+        }),
+      ),
       appBar: AppBar(
-        title: const Text('Employees'),
+        title: Text(
+          'Employees',
+          style: GoogleFonts.kreon(fontSize: 20),
+        ),
       ),
       body: Column(
         children: [
@@ -399,15 +402,15 @@ class _EmployeesPageState extends State<EmployeesPage> {
                           height: 100,
                           width: 150,
                           child: Column(
-                            children: const [
+                            children: [
                               Text(
                                 'Please Wait...',
-                                style: TextStyle(fontSize: 20),
+                                style: GoogleFonts.kreon(fontSize: 18),
                               ),
-                              SizedBox(
+                              const SizedBox(
                                 height: 5,
                               ),
-                              CircularProgressIndicator(),
+                              const CircularProgressIndicator(),
                             ],
                           ),
                         ),
@@ -427,37 +430,39 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                       BorderRadius.circular(15), //<-- SEE HERE
                                 ),
                                 horizontalTitleGap: 10,
-                                tileColor: Colors.white,
+                                tileColor:
+                                    const Color.fromARGB(255, 250, 250, 250),
                                 title: Row(
                                   mainAxisAlignment:
                                       MainAxisAlignment.spaceBetween,
                                   children: [
                                     TextButton(
                                       onPressed: () {
+                                        int depind = all_depid.indexOf(
+                                            newlist[index]
+                                                .departmentId
+                                                .toString());
+                                        int desind = all_desid.indexOf(
+                                            newlist[index]
+                                                .designationId
+                                                .toString());
                                         setState(() {
                                           datetime3 =
                                               "${newlist[index].dateOfBirth.day}-${newlist[index].dateOfBirth.month}-${newlist[index].dateOfBirth.year}";
                                         });
-
-                                        Navigator.of(context).push(
-                                            MaterialPageRoute(
-                                                builder: ((context) =>
-                                                    EmployeeDetailPage(
-                                                        name:
-                                                            newlist[index].name,
-                                                        dob: datetime3,
-                                                        desingnation_id:
-                                                            newlist[index]
-                                                                .designationId
-                                                                .toString(),
-                                                        department_id:
-                                                            newlist[index]
-                                                                .departmentId
-                                                                .toString()))));
+                                        context.router.push(EmployeeDetailRoute(
+                                            name: newlist[index].name,
+                                            dob: datetime3,
+                                            desingnation:
+                                                all_des[desind].toString(),
+                                            department:
+                                                all_dep[depind].toString()));
                                       },
                                       child: Text(
                                         newlist[index].name,
-                                        style: const TextStyle(fontSize: 18),
+                                        style: GoogleFonts.kreon(
+                                          fontSize: 20,
+                                        ),
                                       ),
                                     ),
                                     PopupMenuButton<int>(
@@ -467,12 +472,15 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                           value: 1,
                                           // row with 2 children
                                           child: Row(
-                                            children: const [
-                                              Icon(Icons.edit),
-                                              SizedBox(
+                                            children: [
+                                              const Icon(Icons.edit),
+                                              const SizedBox(
                                                 width: 10,
                                               ),
-                                              Text("Update")
+                                              Text(
+                                                "Update",
+                                                style: GoogleFonts.kreon(),
+                                              )
                                             ],
                                           ),
                                         ),
@@ -481,12 +489,15 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                           value: 2,
                                           // row with two children
                                           child: Row(
-                                            children: const [
-                                              Icon(Icons.delete),
-                                              SizedBox(
+                                            children: [
+                                              const Icon(Icons.delete),
+                                              const SizedBox(
                                                 width: 10,
                                               ),
-                                              Text("Delete")
+                                              Text(
+                                                "Delete",
+                                                style: GoogleFonts.kreon(),
+                                              )
                                             ],
                                           ),
                                         ),
@@ -755,29 +766,100 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                             },
                                           );
                                         } else if (value == 2) {
-                                          ServiceApi()
-                                              .delete_employee(
-                                                  id: newlist[index]
-                                                      .id
-                                                      .toString())
-                                              .whenComplete(() {
-                                            showDialog(
+                                          showDialog(
                                               context: context,
-                                              builder: (BuildContext context) {
-                                                getdata().whenComplete(() =>
-                                                    Navigator.pop(context));
-                                                return const AlertPage(
-                                                    alertmessage: 'Deleting..');
-                                              },
-                                            ).whenComplete(
-                                                () => getdel_status());
-                                          });
-                                          setState(() {
-                                            all_desid = [];
-                                            all_depid = [];
-                                            all_dep = [];
-                                            all_des = [];
-                                          });
+                                              builder: ((BuildContext context) {
+                                                return StatefulBuilder(builder:
+                                                    ((context, setState) {
+                                                  return AlertDialog(
+                                                    title: Text('Confirm',
+                                                        style: GoogleFonts
+                                                            .kreon()),
+                                                    content: Text(
+                                                        'Are You Sure to Delete?',
+                                                        style: GoogleFonts
+                                                            .kreon()),
+                                                    actions: [
+                                                      Row(
+                                                        mainAxisAlignment:
+                                                            MainAxisAlignment
+                                                                .end,
+                                                        children: [
+                                                          ElevatedButton(
+                                                              style:
+                                                                  ElevatedButton
+                                                                      .styleFrom(
+                                                                backgroundColor:
+                                                                    Colors.grey,
+                                                                side: const BorderSide(
+                                                                    color: Colors
+                                                                        .red),
+                                                              ),
+                                                              onPressed: () {
+                                                                Navigator.pop(
+                                                                    context);
+                                                              },
+                                                              child: Text(
+                                                                "CANCEL",
+                                                                style:
+                                                                    GoogleFonts
+                                                                        .kreon(),
+                                                              )),
+                                                          Padding(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                        .only(
+                                                                    left: 10),
+                                                            child:
+                                                                ElevatedButton(
+                                                                    style: ElevatedButton.styleFrom(
+                                                                        backgroundColor:
+                                                                            Colors
+                                                                                .green),
+                                                                    onPressed:
+                                                                        () {
+                                                                      ServiceApi()
+                                                                          .delete_employee(
+                                                                              id: newlist[index].id.toString())
+                                                                          .whenComplete(() {
+                                                                        Navigator.of(context)
+                                                                            .pop();
+
+                                                                        showDialog(
+                                                                          context:
+                                                                              context,
+                                                                          builder:
+                                                                              (BuildContext context) {
+                                                                            getdata().whenComplete(() =>
+                                                                                Navigator.pop(context));
+                                                                            return const AlertPage(alertmessage: 'Deleting..');
+                                                                          },
+                                                                        ).whenComplete(() =>
+                                                                            getdel_status());
+                                                                      });
+                                                                      setState(
+                                                                          () {
+                                                                        all_desid =
+                                                                            [];
+                                                                        all_depid =
+                                                                            [];
+                                                                        all_dep =
+                                                                            [];
+                                                                        all_des =
+                                                                            [];
+                                                                      });
+                                                                    },
+                                                                    child: Text(
+                                                                        "YES",
+                                                                        style: GoogleFonts
+                                                                            .kreon())),
+                                                          )
+                                                        ],
+                                                      ),
+                                                    ],
+                                                  );
+                                                }));
+                                              }));
                                         }
                                       },
                                     ),
