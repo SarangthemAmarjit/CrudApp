@@ -24,8 +24,17 @@ class _DepartmentPageState extends State<DesignatioPage> {
     getdata();
   }
 
+  String finaltokken = '';
+
   Future getdata() async {
-    final datafinal = await ServiceApi().Get_designation();
+    final prefs = await SharedPreferences.getInstance();
+    String tokken = prefs.getString('tokken')!;
+    final datafinal = await ServiceApi().Get_designation(token: tokken);
+
+    setState(() {
+      finaltokken = tokken;
+    });
+
     setState(() {
       newlist = datafinal!;
     });
@@ -107,6 +116,7 @@ class _DepartmentPageState extends State<DesignatioPage> {
                                 onPressed: () async {
                                   ServiceApi()
                                       .create_designation(
+                                    token: finaltokken,
                                     name: _namefieldcontroller.text,
                                   )
                                       .whenComplete(() {
@@ -314,7 +324,9 @@ class _DepartmentPageState extends State<DesignatioPage> {
                                                                             .id
                                                                             .toString(),
                                                                         name: _namefieldcontroller
-                                                                            .text)
+                                                                            .text,
+                                                                        token:
+                                                                            finaltokken)
                                                                     .whenComplete(
                                                                         () {
                                                                   Navigator.pop(
@@ -419,7 +431,9 @@ class _DepartmentPageState extends State<DesignatioPage> {
                                                                     .delete_designation(
                                                                         id: newlist[index]
                                                                             .id
-                                                                            .toString())
+                                                                            .toString(),
+                                                                        token:
+                                                                            finaltokken)
                                                                     .whenComplete(
                                                                         () {
                                                                   getdel_status();

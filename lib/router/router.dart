@@ -11,7 +11,7 @@ import 'package:crudapp/pages/signupPage.dart';
 @MaterialAutoRouter(
   replaceInRouteName: 'Page,Route',
   routes: <AutoRoute>[
-    AutoRoute(page: AuthFlowPage, initial: true, path: 'auto', children: [
+    AutoRoute(page: AuthFlowPage, initial: true, path: '/auto', children: [
       AutoRoute(
         page: LoginPage,
       ),

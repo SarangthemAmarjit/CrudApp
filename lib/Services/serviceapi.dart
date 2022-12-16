@@ -8,9 +8,14 @@ import 'package:http/http.dart' as http;
 import 'package:shared_preferences/shared_preferences.dart';
 
 class ServiceApi {
-  Future<List<Itemmodal>?> Get_designation() async {
-    final response = await http.get(Uri.parse(
-        'http://phpstack-598410-2859373.cloudwaysapps.com/api/designations'));
+  Future<List<Itemmodal>?> Get_designation({required String token}) async {
+    final response = await http.get(
+      Uri.parse(
+          'http://phpstack-598410-2859373.cloudwaysapps.com/api/designations'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
     final data = jsonDecode(response.body) as List;
     if (response.statusCode == 200) {
       var users = data.map((e) => Itemmodal.fromJson(e)).toList();
@@ -22,9 +27,14 @@ class ServiceApi {
     return null;
   }
 
-  Future<List<Itemmodal2>?> Get_department() async {
-    final response = await http.get(Uri.parse(
-        'http://phpstack-598410-2859373.cloudwaysapps.com/api/departments'));
+  Future<List<Itemmodal2>?> Get_department({required String token}) async {
+    final response = await http.get(
+      Uri.parse(
+          'http://phpstack-598410-2859373.cloudwaysapps.com/api/departments'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
     final data = jsonDecode(response.body) as List;
     if (response.statusCode == 200) {
       var users = data.map((e) => Itemmodal2.fromJson(e)).toList();
@@ -36,9 +46,14 @@ class ServiceApi {
     return null;
   }
 
-  Future<List<Itemmodal3>?> Get_employee() async {
-    final response = await http.get(Uri.parse(
-        'http://phpstack-598410-2859373.cloudwaysapps.com/api/employees'));
+  Future<List<Itemmodal3>?> Get_employee({required String token}) async {
+    final response = await http.get(
+      Uri.parse(
+          'http://phpstack-598410-2859373.cloudwaysapps.com/api/employees'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
+    );
     final data = jsonDecode(response.body) as List;
     if (response.statusCode == 200) {
       var users = data.map((e) => Itemmodal3.fromJson(e)).toList();
@@ -54,11 +69,15 @@ class ServiceApi {
       {required String name,
       required String desId,
       required String depId,
-      required String dob}) async {
+      required String dob,
+      required String token}) async {
     final prefs = await SharedPreferences.getInstance();
     final response = await http.post(
         Uri.parse(
             'http://phpstack-598410-2859373.cloudwaysapps.com/api/employees'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
         body: {
           "name": name,
           "designation_id": desId,
@@ -80,12 +99,16 @@ class ServiceApi {
       required String name,
       required String desId,
       required String depId,
-      required String dob}) async {
+      required String dob,
+      required String token}) async {
     final prefs = await SharedPreferences.getInstance();
     log(id);
     final response = await http.patch(
         Uri.parse(
             'http://phpstack-598410-2859373.cloudwaysapps.com/api/employees/$id'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
         body: {
           "name": name,
           "designation_id": desId,
@@ -102,13 +125,14 @@ class ServiceApi {
     return null;
   }
 
-  Future delete_employee({
-    required String id,
-  }) async {
+  Future delete_employee({required String id, required String token}) async {
     final prefs = await SharedPreferences.getInstance();
     final response = await http.delete(
       Uri.parse(
           'http://phpstack-598410-2859373.cloudwaysapps.com/api/employees/$id'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
     );
     prefs.setInt('emp_deletecode', response.statusCode);
     if (response.statusCode == 204) {
@@ -120,13 +144,15 @@ class ServiceApi {
     return null;
   }
 
-  Future create_department({
-    required String name,
-  }) async {
+  Future create_department(
+      {required String name, required String token}) async {
     final prefs = await SharedPreferences.getInstance();
     final response = await http.post(
         Uri.parse(
             'http://phpstack-598410-2859373.cloudwaysapps.com/api/departments'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
         body: {
           "name": name,
         });
@@ -140,15 +166,16 @@ class ServiceApi {
     return null;
   }
 
-  Future update_department({
-    required String id,
-    required String name,
-  }) async {
+  Future update_department(
+      {required String id, required String name, required String token}) async {
     final prefs = await SharedPreferences.getInstance();
     log(id);
     final response = await http.put(
         Uri.parse(
             'http://phpstack-598410-2859373.cloudwaysapps.com/api/departments/$id'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
         body: {
           "name": name,
         });
@@ -162,13 +189,14 @@ class ServiceApi {
     return null;
   }
 
-  Future delete_department({
-    required String id,
-  }) async {
+  Future delete_department({required String id, required String token}) async {
     final prefs = await SharedPreferences.getInstance();
     final response = await http.delete(
       Uri.parse(
           'http://phpstack-598410-2859373.cloudwaysapps.com/api/departments/$id'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
     );
     prefs.setInt('dep_deletecode', response.statusCode);
     if (response.statusCode == 204) {
@@ -180,13 +208,15 @@ class ServiceApi {
     return null;
   }
 
-  Future create_designation({
-    required String name,
-  }) async {
+  Future create_designation(
+      {required String name, required String token}) async {
     final prefs = await SharedPreferences.getInstance();
     final response = await http.post(
         Uri.parse(
             'http://phpstack-598410-2859373.cloudwaysapps.com/api/designations'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
         body: {
           "name": name,
         });
@@ -200,15 +230,16 @@ class ServiceApi {
     return null;
   }
 
-  Future update_designation({
-    required String id,
-    required String name,
-  }) async {
+  Future update_designation(
+      {required String id, required String name, required String token}) async {
     final prefs = await SharedPreferences.getInstance();
     log(id);
     final response = await http.put(
         Uri.parse(
             'http://phpstack-598410-2859373.cloudwaysapps.com/api/designations/$id'),
+        headers: {
+          'Authorization': 'Bearer $token',
+        },
         body: {
           "name": name,
         });
@@ -222,14 +253,15 @@ class ServiceApi {
     return null;
   }
 
-  Future delete_designation({
-    required String id,
-  }) async {
+  Future delete_designation({required String id, required String token}) async {
     final prefs = await SharedPreferences.getInstance();
 
     final response = await http.delete(
       Uri.parse(
           'http://phpstack-598410-2859373.cloudwaysapps.com/api/designations/$id'),
+      headers: {
+        'Authorization': 'Bearer $token',
+      },
     );
     prefs.setInt('des_deletecode', response.statusCode);
     if (response.statusCode == 204) {

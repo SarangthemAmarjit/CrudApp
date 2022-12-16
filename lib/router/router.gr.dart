@@ -91,12 +91,12 @@ class AppRouter extends _i9.RootStackRouter {
         _i9.RouteConfig(
           '/#redirect',
           path: '/',
-          redirectTo: 'auto',
+          redirectTo: '/auto',
           fullMatch: true,
         ),
         _i9.RouteConfig(
           AuthFlowRoute.name,
-          path: 'auto',
+          path: '/auto',
           children: [
             _i9.RouteConfig(
               LoginRoute.name,
@@ -139,7 +139,7 @@ class AuthFlowRoute extends _i9.PageRouteInfo<void> {
   const AuthFlowRoute({List<_i9.PageRouteInfo>? children})
       : super(
           AuthFlowRoute.name,
-          path: 'auto',
+          path: '/auto',
           initialChildren: children,
         );
 

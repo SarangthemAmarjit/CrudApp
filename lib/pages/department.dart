@@ -24,10 +24,14 @@ class _DepartmentPageState extends State<DepartmentPage> {
     getdata();
   }
 
+  String finaltokken = '';
   Future getdata() async {
-    final datafinal = await ServiceApi().Get_department();
+    final prefs = await SharedPreferences.getInstance();
+    String tokken = prefs.getString('tokken')!;
+    final datafinal = await ServiceApi().Get_department(token: tokken);
     setState(() {
       newlist = datafinal!;
+      finaltokken = tokken;
     });
   }
 
@@ -108,6 +112,7 @@ class _DepartmentPageState extends State<DepartmentPage> {
                                   ServiceApi()
                                       .create_department(
                                     name: _namefieldcontroller.text,
+                                    token: finaltokken,
                                   )
                                       .whenComplete(() {
                                     Navigator.pop(context);
@@ -309,7 +314,9 @@ class _DepartmentPageState extends State<DepartmentPage> {
                                                                             .id
                                                                             .toString(),
                                                                         name: _namefieldcontroller
-                                                                            .text)
+                                                                            .text,
+                                                                        token:
+                                                                            finaltokken)
                                                                     .whenComplete(
                                                                         () {
                                                                   Navigator.pop(
@@ -411,7 +418,9 @@ class _DepartmentPageState extends State<DepartmentPage> {
                                                                       id: newlist[
                                                                               index]
                                                                           .id
-                                                                          .toString())
+                                                                          .toString(),
+                                                                      token:
+                                                                          finaltokken)
                                                                   .whenComplete(
                                                                       () {
                                                                 getdel_status();

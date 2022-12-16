@@ -18,9 +18,8 @@ class AuthRepository {
         Uri.parse('http://phpstack-598410-2859373.cloudwaysapps.com/api/login'),
         body: jsonEncode(body));
 
-    final data = jsonDecode(response.body) as Map<String, dynamic>;
-
     if (response.statusCode == 200) {
+      final data = jsonDecode(response.body) as Map<String, dynamic>;
       final tokken = tokkenmodal.fromJson(data);
       prefs.setString('tokken', tokken.token);
       authLoginListener.loaded();

@@ -1,6 +1,7 @@
 import 'package:crudapp/core/multiprovider.wrapper.dart';
 import 'package:crudapp/router/router.gr.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
 
 void main() {
   runApp(MyApp());
@@ -15,14 +16,14 @@ class MyApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiproviderWrapper(
       child: MaterialApp.router(
-        routerDelegate: _appRouter.delegate(),
-        routeInformationParser: _appRouter.defaultRouteParser(),
-        debugShowCheckedModeBanner: false,
-        title: 'Flutter Demo',
-        theme: ThemeData(
-          primarySwatch: Colors.blue,
-        ),
-      ),
+          routerDelegate: _appRouter.delegate(),
+          routeInformationParser: _appRouter.defaultRouteParser(),
+          debugShowCheckedModeBanner: false,
+          title: 'Flutter Demo',
+          theme: ThemeData(
+            primarySwatch: Colors.blue,
+          ),
+          builder: EasyLoading.init()),
     );
   }
 }

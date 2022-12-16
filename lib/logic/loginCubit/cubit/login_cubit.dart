@@ -16,7 +16,7 @@ class LoginCubit extends Cubit<Status> implements AuthLoginListener {
 
   @override
   void error() {
-    emit(Status.initial);
+    emit(Status.error);
   }
 
   @override

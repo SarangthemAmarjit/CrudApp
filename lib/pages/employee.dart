@@ -54,14 +54,6 @@ class _EmployeesPageState extends State<EmployeesPage> {
     getdata();
   }
 
-  getdata2() async {
-    final datafinal = await ServiceApi().Get_employee();
-
-    setState(() {
-      newlist = datafinal!;
-    });
-  }
-
   int del_statuscode = 0;
   int update_statuscode = 0;
   int create_statuscode = 0;
@@ -105,15 +97,22 @@ class _EmployeesPageState extends State<EmployeesPage> {
     }
   }
 
+  final GlobalKey<FormFieldState> _keydep = GlobalKey();
+  final GlobalKey<FormFieldState> _keydes = GlobalKey();
+
+  String finaltoken = '';
   DateTime? initialdate = DateTime(2010);
   Future getdata() async {
-    final datafinal = await ServiceApi().Get_employee();
-    final datafinal2 = await ServiceApi().Get_designation();
-    final datafinal3 = await ServiceApi().Get_department();
+    final prefs = await SharedPreferences.getInstance();
+    String tokken = prefs.getString('tokken')!;
+    final datafinal = await ServiceApi().Get_employee(token: tokken);
+    final datafinal2 = await ServiceApi().Get_designation(token: tokken);
+    final datafinal3 = await ServiceApi().Get_department(token: tokken);
     setState(() {
       newlist = datafinal!;
       newlist2 = datafinal2!;
       newlist3 = datafinal3!;
+      finaltoken = tokken;
     });
     for (var element in newlist2) {
       all_desid.add(element.id.toString());
@@ -201,6 +200,13 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                   side: const BorderSide(color: Colors.red)),
                               onPressed: () {
                                 Navigator.pop(context);
+                                setState(() {
+                                  _namefieldcontroller.clear();
+                                  datetime2 = '';
+
+                                  dropdownvalue1 = null;
+                                  dropdownvalue2 = null;
+                                });
                               },
                               child: const Text("CANCEL")),
                           Padding(
@@ -214,7 +220,8 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                           name: _namefieldcontroller.text,
                                           desId: dropdownvalue11!,
                                           depId: dropdownvalue22!,
-                                          dob: datetime)
+                                          dob: datetime,
+                                          token: '')
                                       .whenComplete(() {
                                     Navigator.pop(context);
 
@@ -236,6 +243,11 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                     all_depid = [];
                                     all_dep = [];
                                     all_des = [];
+                                    _namefieldcontroller.clear();
+                                    datetime2 = '';
+
+                                    dropdownvalue1 = null;
+                                    dropdownvalue2 = null;
                                   });
                                 },
                                 child: const Text("ADD")),
@@ -272,6 +284,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                     const Text('Designation :'),
                                     DropdownButtonHideUnderline(
                                       child: DropdownButton2(
+                                        key: _keydes,
                                         dropdownPadding:
                                             const EdgeInsets.only(left: 25),
                                         dropdownDecoration: BoxDecoration(
@@ -324,6 +337,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                     const Text("Department :"),
                                     DropdownButtonHideUnderline(
                                       child: DropdownButton2(
+                                        key: _keydep,
                                         dropdownDecoration: BoxDecoration(
                                             borderRadius:
                                                 BorderRadius.circular(10)),
@@ -432,438 +446,452 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                 horizontalTitleGap: 10,
                                 tileColor:
                                     const Color.fromARGB(255, 250, 250, 250),
-                                title: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    TextButton(
-                                      onPressed: () {
-                                        int depind = all_depid.indexOf(
-                                            newlist[index]
-                                                .departmentId
-                                                .toString());
-                                        int desind = all_desid.indexOf(
-                                            newlist[index]
-                                                .designationId
-                                                .toString());
-                                        setState(() {
-                                          datetime3 =
-                                              "${newlist[index].dateOfBirth.day}-${newlist[index].dateOfBirth.month}-${newlist[index].dateOfBirth.year}";
-                                        });
-                                        context.router.push(EmployeeDetailRoute(
-                                            name: newlist[index].name,
-                                            dob: datetime3,
-                                            desingnation:
-                                                all_des[desind].toString(),
-                                            department:
-                                                all_dep[depind].toString()));
-                                      },
-                                      child: Text(
-                                        newlist[index].name,
-                                        style: GoogleFonts.kreon(
-                                          fontSize: 20,
-                                        ),
+                                title: Align(
+                                  alignment: Alignment.centerLeft,
+                                  child: TextButton(
+                                    onPressed: () {
+                                      int depind = all_depid.indexOf(
+                                          newlist[index]
+                                              .departmentId
+                                              .toString());
+                                      int desind = all_desid.indexOf(
+                                          newlist[index]
+                                              .designationId
+                                              .toString());
+                                      setState(() {
+                                        datetime3 =
+                                            "${newlist[index].dateOfBirth.day}-${newlist[index].dateOfBirth.month}-${newlist[index].dateOfBirth.year}";
+                                      });
+                                      context.router.push(EmployeeDetailRoute(
+                                          name: newlist[index].name,
+                                          dob: datetime3,
+                                          desingnation:
+                                              all_des[desind].toString(),
+                                          department:
+                                              all_dep[depind].toString()));
+                                    },
+                                    child: Text(
+                                      newlist[index].name,
+                                      style: GoogleFonts.kreon(
+                                        fontSize: 18,
                                       ),
                                     ),
-                                    PopupMenuButton<int>(
-                                      itemBuilder: (context) => [
-                                        // PopupMenuItem 1
-                                        PopupMenuItem(
-                                          value: 1,
-                                          // row with 2 children
-                                          child: Row(
-                                            children: [
-                                              const Icon(Icons.edit),
-                                              const SizedBox(
-                                                width: 10,
-                                              ),
-                                              Text(
-                                                "Update",
-                                                style: GoogleFonts.kreon(),
-                                              )
-                                            ],
+                                  ),
+                                ),
+                                trailing: PopupMenuButton<int>(
+                                  itemBuilder: (context) => [
+                                    // PopupMenuItem 1
+                                    PopupMenuItem(
+                                      value: 1,
+                                      // row with 2 children
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.edit),
+                                          const SizedBox(
+                                            width: 10,
                                           ),
-                                        ),
-                                        // PopupMenuItem 2
-                                        PopupMenuItem(
-                                          value: 2,
-                                          // row with two children
-                                          child: Row(
-                                            children: [
-                                              const Icon(Icons.delete),
-                                              const SizedBox(
-                                                width: 10,
-                                              ),
-                                              Text(
-                                                "Delete",
-                                                style: GoogleFonts.kreon(),
-                                              )
-                                            ],
+                                          Text(
+                                            "Update",
+                                            style: GoogleFonts.kreon(),
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                    // PopupMenuItem 2
+                                    PopupMenuItem(
+                                      value: 2,
+                                      // row with two children
+                                      child: Row(
+                                        children: [
+                                          const Icon(Icons.delete),
+                                          const SizedBox(
+                                            width: 10,
                                           ),
-                                        ),
-                                      ],
-                                      offset: const Offset(5, 40),
+                                          Text(
+                                            "Delete",
+                                            style: GoogleFonts.kreon(),
+                                          )
+                                        ],
+                                      ),
+                                    ),
+                                  ],
+                                  offset: const Offset(5, 40),
 
-                                      elevation: 2,
-                                      // on selected we show the dialog box
-                                      onSelected: (value) {
-                                        // if value 1 show dialog
-                                        if (value == 1) {
-                                          int ind1 = all_desid.indexOf(
-                                              newlist[index]
-                                                  .designationId
-                                                  .toString());
-                                          int ind2 = all_depid.indexOf(
-                                              newlist[index]
-                                                  .departmentId
-                                                  .toString());
+                                  elevation: 2,
+                                  // on selected we show the dialog box
+                                  onSelected: (value) {
+                                    // if value 1 show dialog
+                                    if (value == 1) {
+                                      int ind1 = all_desid.indexOf(
+                                          newlist[index]
+                                              .designationId
+                                              .toString());
+                                      int ind2 = all_depid.indexOf(
+                                          newlist[index]
+                                              .departmentId
+                                              .toString());
 
-                                          setState(() {
-                                            _namefieldcontroller2.text =
-                                                newlist[index].name;
-                                            dropdownvalue1 = all_des[ind1];
-                                            dropdownvalue2 = all_dep[ind2];
-                                            dropdownvalue11 = newlist[index]
-                                                .designationId
-                                                .toString();
-                                            dropdownvalue22 = newlist[index]
-                                                .departmentId
-                                                .toString();
+                                      setState(() {
+                                        _namefieldcontroller2.text =
+                                            newlist[index].name;
+                                        dropdownvalue1 = all_des[ind1];
+                                        dropdownvalue2 = all_dep[ind2];
+                                        dropdownvalue11 = newlist[index]
+                                            .designationId
+                                            .toString();
+                                        dropdownvalue22 = newlist[index]
+                                            .departmentId
+                                            .toString();
 
-                                            datetime2 =
-                                                "${newlist[index].dateOfBirth.day}-${newlist[index].dateOfBirth.month}-${newlist[index].dateOfBirth.year}";
-                                            datetime4 =
-                                                "${newlist[index].dateOfBirth.year}-${newlist[index].dateOfBirth.month}-${newlist[index].dateOfBirth.day}";
-                                          });
+                                        datetime2 =
+                                            "${newlist[index].dateOfBirth.day}-${newlist[index].dateOfBirth.month}-${newlist[index].dateOfBirth.year}";
+                                        datetime4 =
+                                            "${newlist[index].dateOfBirth.year}-${newlist[index].dateOfBirth.month}-${newlist[index].dateOfBirth.day}";
+                                      });
 
-                                          showDialog(
-                                            context: context,
-                                            builder: (cnt) {
-                                              return StatefulBuilder(builder:
-                                                  ((BuildContext context,
-                                                      void Function(
-                                                              void Function())
-                                                          setState) {
-                                                return AlertDialog(
-                                                    actions: [
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .end,
-                                                        children: [
-                                                          ElevatedButton(
-                                                              style: ElevatedButton.styleFrom(
-                                                                  backgroundColor:
-                                                                      Colors
-                                                                          .grey,
-                                                                  side: const BorderSide(
-                                                                      color: Colors
-                                                                          .red)),
-                                                              onPressed: () {
+                                      showDialog(
+                                        context: context,
+                                        builder: (cnt) {
+                                          return StatefulBuilder(builder:
+                                              ((BuildContext context,
+                                                  void Function(void Function())
+                                                      setState) {
+                                            return AlertDialog(
+                                                actions: [
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment.end,
+                                                    children: [
+                                                      ElevatedButton(
+                                                          style: ElevatedButton.styleFrom(
+                                                              backgroundColor:
+                                                                  Colors.grey,
+                                                              side: const BorderSide(
+                                                                  color: Colors
+                                                                      .red)),
+                                                          onPressed: () {
+                                                            Navigator.pop(
+                                                                context);
+                                                            setState(() {
+                                                              _namefieldcontroller
+                                                                  .clear();
+                                                              datetime2 = '';
+
+                                                              dropdownvalue1 =
+                                                                  null;
+                                                              dropdownvalue2 =
+                                                                  null;
+                                                            });
+                                                          },
+                                                          child: const Text(
+                                                              "CANCEL")),
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .only(left: 10),
+                                                        child: ElevatedButton(
+                                                            style: ElevatedButton
+                                                                .styleFrom(
+                                                                    backgroundColor:
+                                                                        Colors
+                                                                            .green),
+                                                            onPressed: () {
+                                                              ServiceApi()
+                                                                  .update_employee(
+                                                                      id: newlist[index]
+                                                                          .id
+                                                                          .toString(),
+                                                                      name: _namefieldcontroller2
+                                                                          .text,
+                                                                      desId:
+                                                                          dropdownvalue11!,
+                                                                      depId:
+                                                                          dropdownvalue22!,
+                                                                      dob:
+                                                                          datetime4,
+                                                                      token:
+                                                                          finaltoken)
+                                                                  .whenComplete(
+                                                                      () {
                                                                 Navigator.pop(
                                                                     context);
-                                                              },
-                                                              child: const Text(
-                                                                  "CANCEL")),
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                        .only(
-                                                                    left: 10),
-                                                            child:
-                                                                ElevatedButton(
-                                                                    style: ElevatedButton.styleFrom(
-                                                                        backgroundColor:
-                                                                            Colors
-                                                                                .green),
-                                                                    onPressed:
-                                                                        () {
-                                                                      ServiceApi()
-                                                                          .update_employee(
-                                                                              id: newlist[index].id.toString(),
-                                                                              name: _namefieldcontroller2.text,
-                                                                              desId: dropdownvalue11!,
-                                                                              depId: dropdownvalue22!,
-                                                                              dob: datetime4)
-                                                                          .whenComplete(() {
+                                                                showDialog(
+                                                                  context:
+                                                                      context,
+                                                                  builder:
+                                                                      (BuildContext
+                                                                          context) {
+                                                                    getdata().whenComplete(() =>
                                                                         Navigator.pop(
-                                                                            context);
-                                                                        showDialog(
-                                                                          context:
-                                                                              context,
-                                                                          builder:
-                                                                              (BuildContext context) {
-                                                                            getdata().whenComplete(() =>
-                                                                                Navigator.pop(context));
-                                                                            return const AlertPage(alertmessage: 'Updating...');
-                                                                          },
-                                                                        ).whenComplete(() =>
-                                                                            getupdate_status());
-                                                                      });
+                                                                            context));
+                                                                    return const AlertPage(
+                                                                        alertmessage:
+                                                                            'Updating...');
+                                                                  },
+                                                                ).whenComplete(() =>
+                                                                    getupdate_status());
+                                                              });
 
-                                                                      setState(
-                                                                          () {
-                                                                        all_desid =
-                                                                            [];
-                                                                        all_depid =
-                                                                            [];
-                                                                        all_dep =
-                                                                            [];
-                                                                        all_des =
-                                                                            [];
-                                                                      });
-                                                                    },
-                                                                    child: const Text(
-                                                                        "UPDATE")),
-                                                          )
-                                                        ],
-                                                      ),
+                                                              setState(() {
+                                                                all_desid = [];
+                                                                all_depid = [];
+                                                                all_dep = [];
+                                                                all_des = [];
+                                                                _namefieldcontroller2
+                                                                    .clear();
+                                                                datetime2 = '';
+
+                                                                dropdownvalue1 =
+                                                                    null;
+                                                                dropdownvalue2 =
+                                                                    null;
+                                                              });
+                                                            },
+                                                            child: const Text(
+                                                                "UPDATE")),
+                                                      )
                                                     ],
-                                                    title: const Text(
-                                                        "Update Employee Details"),
-                                                    content: Form(
-                                                      child: SizedBox(
-                                                        height: 250,
-                                                        child: Column(
+                                                  ),
+                                                ],
+                                                title: const Text(
+                                                    "Update Employee Details"),
+                                                content: Form(
+                                                  child: SizedBox(
+                                                    height: 250,
+                                                    child: Column(
+                                                      children: [
+                                                        TextFormField(
+                                                            keyboardType:
+                                                                TextInputType
+                                                                    .text,
+                                                            controller:
+                                                                _namefieldcontroller2,
+                                                            decoration:
+                                                                const InputDecoration(
+                                                              hintText: 'Name',
+                                                            )),
+                                                        _dataofbirth(datetime2),
+                                                        Row(
                                                           children: [
-                                                            TextFormField(
-                                                                keyboardType:
-                                                                    TextInputType
-                                                                        .text,
-                                                                controller:
-                                                                    _namefieldcontroller2,
-                                                                decoration:
-                                                                    const InputDecoration(
-                                                                  hintText:
-                                                                      'Name',
-                                                                )),
-                                                            _dataofbirth(
-                                                                datetime2),
-                                                            Row(
-                                                              children: [
-                                                                const Text(
-                                                                    'Designation :'),
-                                                                const SizedBox(
-                                                                  width: 10,
-                                                                ),
-                                                                DropdownButtonHideUnderline(
-                                                                  child:
-                                                                      DropdownButton2<
-                                                                          String>(
-                                                                    dropdownDecoration:
-                                                                        BoxDecoration(
-                                                                            borderRadius:
-                                                                                BorderRadius.circular(10)),
-                                                                    dropdownDirection:
-                                                                        DropdownDirection
-                                                                            .left,
-                                                                    dropdownWidth:
-                                                                        200,
-                                                                    hint: const Text(
-                                                                        'Select'),
-                                                                    value:
-                                                                        dropdownvalue1,
-                                                                    icon: const Icon(
-                                                                        Icons
-                                                                            .keyboard_arrow_down),
-                                                                    items: all_des
-                                                                        .map((String
-                                                                            items) {
-                                                                      log(items);
-                                                                      return DropdownMenuItem(
-                                                                        value:
-                                                                            items,
-                                                                        child: Text(
-                                                                            items.toString()),
-                                                                      );
-                                                                    }).toList(),
-                                                                    onChanged:
-                                                                        (String?
-                                                                            newValue) {
-                                                                      setState(
-                                                                          () {
-                                                                        dropdownvalue1 =
-                                                                            newValue!;
-                                                                      });
-                                                                      int ind =
-                                                                          all_des
-                                                                              .indexOf(dropdownvalue1!);
-                                                                      dropdownvalue11 =
-                                                                          all_desid[
-                                                                              ind];
-                                                                    },
-                                                                  ),
-                                                                ),
-                                                              ],
+                                                            const Text(
+                                                                'Designation :'),
+                                                            const SizedBox(
+                                                              width: 10,
                                                             ),
-                                                            Row(
-                                                              children: [
-                                                                const Text(
-                                                                    "Department :"),
-                                                                const SizedBox(
-                                                                  width: 10,
-                                                                ),
-                                                                DropdownButtonHideUnderline(
-                                                                  child:
-                                                                      DropdownButton2(
-                                                                    dropdownDecoration:
-                                                                        BoxDecoration(
-                                                                            borderRadius:
-                                                                                BorderRadius.circular(10)),
-                                                                    dropdownDirection:
-                                                                        DropdownDirection
-                                                                            .left,
-                                                                    dropdownWidth:
-                                                                        200,
-                                                                    hint: const Text(
-                                                                        'Select'),
+                                                            DropdownButtonHideUnderline(
+                                                              child:
+                                                                  DropdownButton2<
+                                                                      String>(
+                                                                key: _keydes,
+                                                                dropdownDecoration:
+                                                                    BoxDecoration(
+                                                                        borderRadius:
+                                                                            BorderRadius.circular(10)),
+                                                                dropdownDirection:
+                                                                    DropdownDirection
+                                                                        .left,
+                                                                dropdownWidth:
+                                                                    200,
+                                                                hint: const Text(
+                                                                    'Select'),
+                                                                value:
+                                                                    dropdownvalue1,
+                                                                icon: const Icon(
+                                                                    Icons
+                                                                        .keyboard_arrow_down),
+                                                                items: all_des
+                                                                    .map((String
+                                                                        items) {
+                                                                  log(items);
+                                                                  return DropdownMenuItem(
                                                                     value:
-                                                                        dropdownvalue2,
-                                                                    // Initial Value
-
-                                                                    // Down Arrow Icon
-                                                                    icon: const Icon(
-                                                                        Icons
-                                                                            .keyboard_arrow_down),
-
-                                                                    // Array list of items
-                                                                    items: all_dep
-                                                                        .map((String
-                                                                            items) {
-                                                                      return DropdownMenuItem(
-                                                                        value:
-                                                                            items,
-                                                                        child: Text(
-                                                                            items),
-                                                                      );
-                                                                    }).toList(),
-                                                                    // After selecting the desired option,it will
-                                                                    // change button value to selected value
-                                                                    onChanged:
-                                                                        (String?
-                                                                            newValue) {
-                                                                      setState(
-                                                                          () {
-                                                                        dropdownvalue2 =
-                                                                            newValue!;
-                                                                      });
-                                                                      int ind =
-                                                                          all_dep
-                                                                              .indexOf(dropdownvalue2!);
-                                                                      dropdownvalue22 =
-                                                                          all_depid[
-                                                                              ind];
-                                                                    },
-                                                                  ),
-                                                                ),
-                                                              ],
+                                                                        items,
+                                                                    child: Text(
+                                                                        items
+                                                                            .toString()),
+                                                                  );
+                                                                }).toList(),
+                                                                onChanged: (String?
+                                                                    newValue) {
+                                                                  setState(() {
+                                                                    dropdownvalue1 =
+                                                                        newValue!;
+                                                                  });
+                                                                  int ind = all_des
+                                                                      .indexOf(
+                                                                          dropdownvalue1!);
+                                                                  dropdownvalue11 =
+                                                                      all_desid[
+                                                                          ind];
+                                                                },
+                                                              ),
                                                             ),
                                                           ],
                                                         ),
-                                                      ),
-                                                    ));
-                                              }));
-                                            },
-                                          );
-                                        } else if (value == 2) {
-                                          showDialog(
-                                              context: context,
-                                              builder: ((BuildContext context) {
-                                                return StatefulBuilder(builder:
-                                                    ((context, setState) {
-                                                  return AlertDialog(
-                                                    title: Text('Confirm',
-                                                        style: GoogleFonts
-                                                            .kreon()),
-                                                    content: Text(
-                                                        'Are You Sure to Delete?',
-                                                        style: GoogleFonts
-                                                            .kreon()),
-                                                    actions: [
-                                                      Row(
-                                                        mainAxisAlignment:
-                                                            MainAxisAlignment
-                                                                .end,
-                                                        children: [
-                                                          ElevatedButton(
-                                                              style:
-                                                                  ElevatedButton
-                                                                      .styleFrom(
-                                                                backgroundColor:
-                                                                    Colors.grey,
-                                                                side: const BorderSide(
+                                                        Row(
+                                                          children: [
+                                                            const Text(
+                                                                "Department :"),
+                                                            const SizedBox(
+                                                              width: 10,
+                                                            ),
+                                                            DropdownButtonHideUnderline(
+                                                              child:
+                                                                  DropdownButton2(
+                                                                key: _keydep,
+                                                                dropdownDecoration:
+                                                                    BoxDecoration(
+                                                                        borderRadius:
+                                                                            BorderRadius.circular(10)),
+                                                                dropdownDirection:
+                                                                    DropdownDirection
+                                                                        .left,
+                                                                dropdownWidth:
+                                                                    200,
+                                                                hint: const Text(
+                                                                    'Select'),
+                                                                value:
+                                                                    dropdownvalue2,
+                                                                // Initial Value
+
+                                                                // Down Arrow Icon
+                                                                icon: const Icon(
+                                                                    Icons
+                                                                        .keyboard_arrow_down),
+
+                                                                // Array list of items
+                                                                items: all_dep
+                                                                    .map((String
+                                                                        items) {
+                                                                  return DropdownMenuItem(
+                                                                    value:
+                                                                        items,
+                                                                    child: Text(
+                                                                        items),
+                                                                  );
+                                                                }).toList(),
+                                                                // After selecting the desired option,it will
+                                                                // change button value to selected value
+                                                                onChanged: (String?
+                                                                    newValue) {
+                                                                  setState(() {
+                                                                    dropdownvalue2 =
+                                                                        newValue!;
+                                                                  });
+                                                                  int ind = all_dep
+                                                                      .indexOf(
+                                                                          dropdownvalue2!);
+                                                                  dropdownvalue22 =
+                                                                      all_depid[
+                                                                          ind];
+                                                                },
+                                                              ),
+                                                            ),
+                                                          ],
+                                                        ),
+                                                      ],
+                                                    ),
+                                                  ),
+                                                ));
+                                          }));
+                                        },
+                                      );
+                                    } else if (value == 2) {
+                                      showDialog(
+                                          context: context,
+                                          builder: ((BuildContext context) {
+                                            return StatefulBuilder(
+                                                builder: ((context, setState) {
+                                              return AlertDialog(
+                                                title: Text('Confirm',
+                                                    style: GoogleFonts.kreon()),
+                                                content: Text(
+                                                    'Are You Sure to Delete?',
+                                                    style: GoogleFonts.kreon()),
+                                                actions: [
+                                                  Row(
+                                                    mainAxisAlignment:
+                                                        MainAxisAlignment.end,
+                                                    children: [
+                                                      ElevatedButton(
+                                                          style: ElevatedButton
+                                                              .styleFrom(
+                                                            backgroundColor:
+                                                                Colors.grey,
+                                                            side:
+                                                                const BorderSide(
                                                                     color: Colors
                                                                         .red),
-                                                              ),
-                                                              onPressed: () {
-                                                                Navigator.pop(
-                                                                    context);
-                                                              },
-                                                              child: Text(
-                                                                "CANCEL",
-                                                                style:
-                                                                    GoogleFonts
-                                                                        .kreon(),
-                                                              )),
-                                                          Padding(
-                                                            padding:
-                                                                const EdgeInsets
-                                                                        .only(
-                                                                    left: 10),
-                                                            child:
-                                                                ElevatedButton(
-                                                                    style: ElevatedButton.styleFrom(
-                                                                        backgroundColor:
-                                                                            Colors
-                                                                                .green),
-                                                                    onPressed:
-                                                                        () {
-                                                                      ServiceApi()
-                                                                          .delete_employee(
-                                                                              id: newlist[index].id.toString())
-                                                                          .whenComplete(() {
-                                                                        Navigator.of(context)
-                                                                            .pop();
+                                                          ),
+                                                          onPressed: () {
+                                                            Navigator.pop(
+                                                                context);
+                                                          },
+                                                          child: Text(
+                                                            "CANCEL",
+                                                            style: GoogleFonts
+                                                                .kreon(),
+                                                          )),
+                                                      Padding(
+                                                        padding:
+                                                            const EdgeInsets
+                                                                .only(left: 10),
+                                                        child: ElevatedButton(
+                                                            style: ElevatedButton
+                                                                .styleFrom(
+                                                                    backgroundColor:
+                                                                        Colors
+                                                                            .green),
+                                                            onPressed: () {
+                                                              ServiceApi()
+                                                                  .delete_employee(
+                                                                      id: newlist[
+                                                                              index]
+                                                                          .id
+                                                                          .toString(),
+                                                                      token:
+                                                                          finaltoken)
+                                                                  .whenComplete(
+                                                                      () {
+                                                                Navigator.of(
+                                                                        context)
+                                                                    .pop();
 
-                                                                        showDialog(
-                                                                          context:
-                                                                              context,
-                                                                          builder:
-                                                                              (BuildContext context) {
-                                                                            getdata().whenComplete(() =>
-                                                                                Navigator.pop(context));
-                                                                            return const AlertPage(alertmessage: 'Deleting..');
-                                                                          },
-                                                                        ).whenComplete(() =>
-                                                                            getdel_status());
-                                                                      });
-                                                                      setState(
-                                                                          () {
-                                                                        all_desid =
-                                                                            [];
-                                                                        all_depid =
-                                                                            [];
-                                                                        all_dep =
-                                                                            [];
-                                                                        all_des =
-                                                                            [];
-                                                                      });
-                                                                    },
-                                                                    child: Text(
-                                                                        "YES",
-                                                                        style: GoogleFonts
-                                                                            .kreon())),
-                                                          )
-                                                        ],
-                                                      ),
+                                                                showDialog(
+                                                                  context:
+                                                                      context,
+                                                                  builder:
+                                                                      (BuildContext
+                                                                          context) {
+                                                                    getdata().whenComplete(() =>
+                                                                        Navigator.pop(
+                                                                            context));
+                                                                    return const AlertPage(
+                                                                        alertmessage:
+                                                                            'Deleting..');
+                                                                  },
+                                                                ).whenComplete(() =>
+                                                                    getdel_status());
+                                                              });
+                                                              setState(() {
+                                                                all_desid = [];
+                                                                all_depid = [];
+                                                                all_dep = [];
+                                                                all_des = [];
+                                                              });
+                                                            },
+                                                            child: Text("YES",
+                                                                style: GoogleFonts
+                                                                    .kreon())),
+                                                      )
                                                     ],
-                                                  );
-                                                }));
-                                              }));
-                                        }
-                                      },
-                                    ),
-                                  ],
+                                                  ),
+                                                ],
+                                              );
+                                            }));
+                                          }));
+                                    }
+                                  },
                                 ),
                               ),
                             ),
