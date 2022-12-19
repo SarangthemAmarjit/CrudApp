@@ -6,10 +6,14 @@ import 'package:crudapp/modal/designation_modal.dart';
 import 'package:crudapp/modal/employee_modal.dart';
 import 'package:crudapp/refactor/alert.dart';
 import 'package:crudapp/Services/serviceapi.dart';
+import 'package:crudapp/refactor/imagepicker.dart';
+import 'package:crudapp/refactor/imagepicker2.dart';
 import 'package:crudapp/refactor/snackbar.dart';
 import 'package:crudapp/router/router.gr.dart';
 import 'package:flutter/material.dart';
 import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
+import 'package:flutter_easyloading/flutter_easyloading.dart';
+import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
 import 'package:dropdown_button2/dropdown_button2.dart';
@@ -57,6 +61,53 @@ class _EmployeesPageState extends State<EmployeesPage> {
   int del_statuscode = 0;
   int update_statuscode = 0;
   int create_statuscode = 0;
+
+  String? latitude;
+  String? longitude;
+  String finallocation = '';
+
+  String profileimage = '';
+
+  Position? _position;
+  void _getCurrentLocation(void Function(void Function()) setState) async {
+    Position position = await _determinePosition();
+    final prefs = await SharedPreferences.getInstance();
+    String image = prefs.getString('profileimage')!;
+
+    setState(() {
+      profileimage = image;
+      _position = position;
+      latitude = position.latitude.toString();
+      longitude = position.longitude.toString();
+      finallocation = "$latitude,$longitude";
+    });
+
+    log(profileimage.toString());
+  }
+
+  Future<Position> _determinePosition() async {
+    LocationPermission permission;
+    permission = await Geolocator.checkPermission();
+    if (permission == LocationPermission.denied) {
+      permission = await Geolocator.requestPermission();
+      if (permission == LocationPermission.denied) {
+        // Permissions are denied, next time you could try
+        // requesting permissions again (this is also where
+        // Android's shouldShowRequestPermissionRationale
+        // returned true. According to Android guidelines
+        // your App should show an explanatory UI now.
+        return Future.error('Location permissions are denied');
+      }
+    }
+    if (permission == LocationPermission.deniedForever) {
+      // Permissions are denied forever, handle appropriately.
+      return Future.error(
+          'Location permissions are permanently denied, we cannot request permissions.');
+    }
+// When we reach here, permissions are granted and we can
+    // continue accessing the position of the device.
+    return await Geolocator.getCurrentPosition();
+  }
 
   getdel_status() async {
     final prefs = await SharedPreferences.getInstance();
@@ -141,7 +192,8 @@ class _EmployeesPageState extends State<EmployeesPage> {
             padding: const EdgeInsets.only(bottom: 10),
             child: DateTimeField(
               controller: TextEditingController(text: dob),
-              decoration: const InputDecoration(
+              decoration: InputDecoration(
+                labelStyle: GoogleFonts.kreon(),
                 labelText: 'Date of Birth',
               ),
               format: format,
@@ -215,26 +267,22 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                 style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.green),
                                 onPressed: () async {
+                                  Navigator.pop(context);
+                                  EasyLoading.show(status: 'Adding..');
                                   await ServiceApi()
                                       .create_employee(
                                           name: _namefieldcontroller.text,
                                           desId: dropdownvalue11!,
                                           depId: dropdownvalue22!,
                                           dob: datetime,
-                                          token: '')
+                                          token: finaltoken,
+                                          image: profileimage,
+                                          location: finallocation)
                                       .whenComplete(() {
-                                    Navigator.pop(context);
-
-                                    showDialog(
-                                      context: context,
-                                      builder: (BuildContext context) {
-                                        getdata().whenComplete(
-                                            () => Navigator.pop(context));
-
-                                        return const AlertPage(
-                                            alertmessage: 'Adding..');
-                                      },
-                                    ).whenComplete(() => getcreate_status());
+                                    getdata().whenComplete(() {
+                                      EasyLoading.dismiss();
+                                      getcreate_status();
+                                    });
                                   });
                                   log(create_statuscode.toString());
 
@@ -255,132 +303,252 @@ class _EmployeesPageState extends State<EmployeesPage> {
                         ],
                       ),
                     ],
-                    title: const Text("Add new Employee"),
-                    content: Form(
-                      child: SizedBox(
-                        height: 250,
-                        child: Column(
-                          children: [
-                            TextFormField(
-                                keyboardType: TextInputType.text,
-                                controller: _namefieldcontroller,
-                                decoration: const InputDecoration(
-                                  hintText: 'Name',
-                                )),
-                            _dataofbirth(datetime2),
-                            Container(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 13),
-                              decoration: BoxDecoration(
-                                  color:
-                                      const Color.fromARGB(255, 240, 237, 237),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                      color: const Color.fromARGB(
-                                          255, 225, 222, 222))),
-                              child: FittedBox(
+                    title: Text(
+                      "Add new Employee",
+                      style: GoogleFonts.kreon(),
+                    ),
+                    content: SingleChildScrollView(
+                      child: Form(
+                        child: SizedBox(
+                          height: 460,
+                          child: Column(
+                            children: [
+                              Row(
+                                mainAxisAlignment:
+                                    MainAxisAlignment.spaceBetween,
+                                children: [
+                                  Text(
+                                    'Profile Photo :',
+                                    style: GoogleFonts.kreon(),
+                                  ),
+                                  const SizedBox(
+                                    width: 30,
+                                  ),
+                                  const ProfileImagepicker(),
+                                ],
+                              ),
+                              const SizedBox(
+                                height: 10,
+                              ),
+                              TextFormField(
+                                  keyboardType: TextInputType.text,
+                                  controller: _namefieldcontroller,
+                                  decoration: InputDecoration(
+                                      hintText: 'Name',
+                                      hintStyle: GoogleFonts.kreon())),
+                              _dataofbirth(datetime2),
+                              Container(
+                                width: MediaQuery.of(context).size.width,
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 13),
+                                decoration: BoxDecoration(
+                                    color: const Color.fromARGB(
+                                        255, 240, 237, 237),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                        color: const Color.fromARGB(
+                                            255, 225, 222, 222))),
+                                child: FittedBox(
+                                  child: Row(
+                                    mainAxisAlignment:
+                                        MainAxisAlignment.spaceBetween,
+                                    children: [
+                                      Text(
+                                        'Designation :',
+                                        style: GoogleFonts.kreon(fontSize: 16),
+                                      ),
+                                      Padding(
+                                        padding:
+                                            const EdgeInsets.only(left: 15),
+                                        child: DropdownButtonHideUnderline(
+                                          child: DropdownButton2(
+                                            dropdownPadding:
+                                                const EdgeInsets.only(left: 25),
+                                            dropdownDecoration: BoxDecoration(
+                                                borderRadius:
+                                                    BorderRadius.circular(10)),
+                                            dropdownDirection:
+                                                DropdownDirection.left,
+                                            dropdownWidth: 250,
+                                            hint: Text(
+                                              'Select',
+                                              style: GoogleFonts.kreon(
+                                                  fontSize: 16),
+                                            ),
+                                            value: dropdownvalue1,
+                                            icon: const Icon(
+                                                Icons.keyboard_arrow_down),
+                                            items: all_des.map((String items) {
+                                              log(items);
+                                              return DropdownMenuItem(
+                                                value: items,
+                                                child: Text(
+                                                  items,
+                                                  style: GoogleFonts.kreon(
+                                                      fontSize: 16),
+                                                ),
+                                              );
+                                            }).toList(),
+                                            onChanged: (String? newValue) {
+                                              setState(() {
+                                                dropdownvalue1 =
+                                                    newValue as String;
+                                              });
+                                              int ind = all_des
+                                                  .indexOf(dropdownvalue1!);
+                                              dropdownvalue11 = all_desid[ind];
+                                            },
+                                          ),
+                                        ),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(
+                                height: 10,
+                              ),
+                              Container(
+                                padding:
+                                    const EdgeInsets.symmetric(horizontal: 13),
+                                decoration: BoxDecoration(
+                                    color: const Color.fromARGB(
+                                        255, 240, 237, 237),
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                        color: const Color.fromARGB(
+                                            255, 225, 222, 222))),
                                 child: Row(
+                                  mainAxisAlignment:
+                                      MainAxisAlignment.spaceBetween,
                                   children: [
-                                    const Text('Designation :'),
-                                    DropdownButtonHideUnderline(
-                                      child: DropdownButton2(
-                                        key: _keydes,
-                                        dropdownPadding:
-                                            const EdgeInsets.only(left: 25),
-                                        dropdownDecoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(10)),
-                                        dropdownDirection:
-                                            DropdownDirection.left,
-                                        dropdownWidth: 250,
-                                        hint: const Text('Select'),
-                                        value: dropdownvalue1,
-                                        icon: const Icon(
-                                            Icons.keyboard_arrow_down),
-                                        items: all_des.map((String items) {
-                                          log(items);
-                                          return DropdownMenuItem(
-                                            value: items,
-                                            child: Text(items.toString()),
-                                          );
-                                        }).toList(),
-                                        onChanged: (String? newValue) {
-                                          setState(() {
-                                            dropdownvalue1 = newValue as String;
-                                          });
-                                          int ind =
-                                              all_des.indexOf(dropdownvalue1!);
-                                          dropdownvalue11 = all_desid[ind];
-                                        },
+                                    Text(
+                                      "Department :",
+                                      style: GoogleFonts.kreon(fontSize: 16),
+                                    ),
+                                    Padding(
+                                      padding: const EdgeInsets.only(left: 15),
+                                      child: DropdownButtonHideUnderline(
+                                        child: DropdownButton2(
+                                          dropdownDecoration: BoxDecoration(
+                                              borderRadius:
+                                                  BorderRadius.circular(10)),
+
+                                          dropdownPadding:
+                                              const EdgeInsets.only(left: 25),
+                                          dropdownDirection:
+                                              DropdownDirection.left,
+                                          dropdownWidth: 250,
+                                          hint: Text(
+                                            'Select',
+                                            style: GoogleFonts.kreon(),
+                                          ),
+                                          value: dropdownvalue2,
+                                          // Initial Value
+
+                                          // Down Arrow Icon
+                                          icon: const Padding(
+                                            padding: EdgeInsets.only(left: 25),
+                                            child:
+                                                Icon(Icons.keyboard_arrow_down),
+                                          ),
+
+                                          // Array list of items
+                                          items: all_dep.map((String items) {
+                                            return DropdownMenuItem(
+                                              value: items,
+                                              child: Text(
+                                                items,
+                                                style: GoogleFonts.kreon(
+                                                    fontSize: 16),
+                                              ),
+                                            );
+                                          }).toList(),
+                                          // After selecting the desired option,it will
+                                          // change button value to selected value
+                                          onChanged: (newValue) {
+                                            setState(() {
+                                              dropdownvalue2 = newValue!;
+                                            });
+                                            int ind = all_dep
+                                                .indexOf(dropdownvalue2!);
+                                            dropdownvalue22 = all_depid[ind];
+                                          },
+                                        ),
                                       ),
                                     ),
                                   ],
                                 ),
                               ),
-                            ),
-                            const SizedBox(
-                              height: 10,
-                            ),
-                            Container(
-                              padding:
-                                  const EdgeInsets.symmetric(horizontal: 13),
-                              decoration: BoxDecoration(
-                                  color:
-                                      const Color.fromARGB(255, 240, 237, 237),
-                                  borderRadius: BorderRadius.circular(12),
-                                  border: Border.all(
-                                      color: const Color.fromARGB(
-                                          255, 225, 222, 222))),
-                              child: FittedBox(
-                                child: Row(
-                                  children: [
-                                    const Text("Department :"),
-                                    DropdownButtonHideUnderline(
-                                      child: DropdownButton2(
-                                        key: _keydep,
-                                        dropdownDecoration: BoxDecoration(
-                                            borderRadius:
-                                                BorderRadius.circular(10)),
-
-                                        alignment: Alignment.center,
-                                        dropdownElevation: 10,
-                                        dropdownPadding:
-                                            const EdgeInsets.only(left: 25),
-                                        dropdownDirection:
-                                            DropdownDirection.left,
-                                        dropdownWidth: 250,
-                                        hint: const Text('Select'),
-                                        value: dropdownvalue2,
-                                        // Initial Value
-
-                                        // Down Arrow Icon
-                                        icon: const Icon(
-                                            Icons.keyboard_arrow_down),
-
-                                        // Array list of items
-                                        items: all_dep.map((String items) {
-                                          return DropdownMenuItem(
-                                            value: items,
-                                            child: Text(items),
-                                          );
-                                        }).toList(),
-                                        // After selecting the desired option,it will
-                                        // change button value to selected value
-                                        onChanged: (newValue) {
-                                          setState(() {
-                                            dropdownvalue2 = newValue!;
-                                          });
-                                          int ind =
-                                              all_dep.indexOf(dropdownvalue2!);
-                                          dropdownvalue22 = all_depid[ind];
-                                        },
-                                      ),
-                                    ),
-                                  ],
-                                ),
+                              const SizedBox(
+                                height: 10,
                               ),
-                            ),
-                          ],
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.center,
+                                children: [
+                                  TextButton.icon(
+                                      onPressed: () {
+                                        _getCurrentLocation(setState);
+                                      },
+                                      icon: const Icon(Icons.fmd_good_sharp),
+                                      label: Text(
+                                        'Get Location',
+                                        style: GoogleFonts.kreon(),
+                                      )),
+                                  _position != null
+                                      ? Align(
+                                          alignment: Alignment.center,
+                                          child: Container(
+                                            child: Column(
+                                              children: [
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Text(
+                                                      "Latitude : ",
+                                                      style: GoogleFonts.kreon(
+                                                          fontSize: 18,
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                    ),
+                                                    Text(
+                                                      latitude!,
+                                                      style:
+                                                          GoogleFonts.kreon(),
+                                                    )
+                                                  ],
+                                                ),
+                                                Row(
+                                                  mainAxisAlignment:
+                                                      MainAxisAlignment.center,
+                                                  children: [
+                                                    Text(
+                                                      'Longitude : ',
+                                                      style: GoogleFonts.kreon(
+                                                          fontSize: 18,
+                                                          fontWeight:
+                                                              FontWeight.bold),
+                                                    ),
+                                                    Text(
+                                                      longitude!,
+                                                      style:
+                                                          GoogleFonts.kreon(),
+                                                    )
+                                                  ],
+                                                )
+                                              ],
+                                            ),
+                                          ),
+                                        )
+                                      : Text(
+                                          'No location data',
+                                          style: GoogleFonts.kreon(),
+                                        ),
+                                ],
+                              ),
+                            ],
+                          ),
                         ),
                       ),
                     ),
@@ -458,17 +626,22 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                           newlist[index]
                                               .designationId
                                               .toString());
+
                                       setState(() {
                                         datetime3 =
                                             "${newlist[index].dateOfBirth.day}-${newlist[index].dateOfBirth.month}-${newlist[index].dateOfBirth.year}";
                                       });
+
                                       context.router.push(EmployeeDetailRoute(
                                           name: newlist[index].name,
                                           dob: datetime3,
                                           desingnation:
                                               all_des[desind].toString(),
                                           department:
-                                              all_dep[depind].toString()));
+                                              all_dep[depind].toString(),
+                                          image: newlist[index].image,
+                                          location:
+                                              newlist[index].geoLocation));
                                     },
                                     child: Text(
                                       newlist[index].name,
@@ -530,7 +703,8 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                           newlist[index]
                                               .departmentId
                                               .toString());
-
+                                      List locationsplit =
+                                          newlist[index].geoLocation.split(',');
                                       setState(() {
                                         _namefieldcontroller2.text =
                                             newlist[index].name;
@@ -547,6 +721,12 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                             "${newlist[index].dateOfBirth.day}-${newlist[index].dateOfBirth.month}-${newlist[index].dateOfBirth.year}";
                                         datetime4 =
                                             "${newlist[index].dateOfBirth.year}-${newlist[index].dateOfBirth.month}-${newlist[index].dateOfBirth.day}";
+                                        latitude = locationsplit[0];
+                                        longitude = locationsplit[1];
+                                        finallocation =
+                                            newlist[index].geoLocation;
+                                        profileimage =
+                                            "http://phpstack-598410-2859373.cloudwaysapps.com/${newlist[index].image}";
                                       });
 
                                       showDialog(
@@ -610,7 +790,11 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                                                       dob:
                                                                           datetime4,
                                                                       token:
-                                                                          finaltoken)
+                                                                          finaltoken,
+                                                                      image:
+                                                                          profileimage,
+                                                                      location:
+                                                                          finallocation)
                                                                   .whenComplete(
                                                                       () {
                                                                 Navigator.pop(
@@ -655,141 +839,239 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                                 ],
                                                 title: const Text(
                                                     "Update Employee Details"),
-                                                content: Form(
-                                                  child: SizedBox(
-                                                    height: 250,
-                                                    child: Column(
-                                                      children: [
-                                                        TextFormField(
-                                                            keyboardType:
-                                                                TextInputType
-                                                                    .text,
-                                                            controller:
-                                                                _namefieldcontroller2,
-                                                            decoration:
-                                                                const InputDecoration(
-                                                              hintText: 'Name',
-                                                            )),
-                                                        _dataofbirth(datetime2),
-                                                        Row(
-                                                          children: [
-                                                            const Text(
-                                                                'Designation :'),
-                                                            const SizedBox(
-                                                              width: 10,
-                                                            ),
-                                                            DropdownButtonHideUnderline(
-                                                              child:
-                                                                  DropdownButton2<
-                                                                      String>(
-                                                                key: _keydes,
-                                                                dropdownDecoration:
-                                                                    BoxDecoration(
-                                                                        borderRadius:
-                                                                            BorderRadius.circular(10)),
-                                                                dropdownDirection:
-                                                                    DropdownDirection
-                                                                        .left,
-                                                                dropdownWidth:
-                                                                    200,
-                                                                hint: const Text(
-                                                                    'Select'),
-                                                                value:
-                                                                    dropdownvalue1,
-                                                                icon: const Icon(
-                                                                    Icons
-                                                                        .keyboard_arrow_down),
-                                                                items: all_des
-                                                                    .map((String
-                                                                        items) {
-                                                                  log(items);
-                                                                  return DropdownMenuItem(
-                                                                    value:
-                                                                        items,
-                                                                    child: Text(
-                                                                        items
-                                                                            .toString()),
-                                                                  );
-                                                                }).toList(),
-                                                                onChanged: (String?
-                                                                    newValue) {
-                                                                  setState(() {
-                                                                    dropdownvalue1 =
-                                                                        newValue!;
-                                                                  });
-                                                                  int ind = all_des
-                                                                      .indexOf(
-                                                                          dropdownvalue1!);
-                                                                  dropdownvalue11 =
-                                                                      all_desid[
-                                                                          ind];
-                                                                },
+                                                content: SingleChildScrollView(
+                                                  child: Form(
+                                                    child: SizedBox(
+                                                      height: 465,
+                                                      child: Column(
+                                                        children: [
+                                                          Row(
+                                                            mainAxisAlignment:
+                                                                MainAxisAlignment
+                                                                    .spaceBetween,
+                                                            children: [
+                                                              Text(
+                                                                'Profile Photo :',
+                                                                style:
+                                                                    GoogleFonts
+                                                                        .kreon(),
                                                               ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                        Row(
-                                                          children: [
-                                                            const Text(
-                                                                "Department :"),
-                                                            const SizedBox(
-                                                              width: 10,
-                                                            ),
-                                                            DropdownButtonHideUnderline(
-                                                              child:
-                                                                  DropdownButton2(
-                                                                key: _keydep,
-                                                                dropdownDecoration:
-                                                                    BoxDecoration(
-                                                                        borderRadius:
-                                                                            BorderRadius.circular(10)),
-                                                                dropdownDirection:
-                                                                    DropdownDirection
-                                                                        .left,
-                                                                dropdownWidth:
-                                                                    200,
-                                                                hint: const Text(
-                                                                    'Select'),
-                                                                value:
-                                                                    dropdownvalue2,
-                                                                // Initial Value
-
-                                                                // Down Arrow Icon
-                                                                icon: const Icon(
-                                                                    Icons
-                                                                        .keyboard_arrow_down),
-
-                                                                // Array list of items
-                                                                items: all_dep
-                                                                    .map((String
-                                                                        items) {
-                                                                  return DropdownMenuItem(
-                                                                    value:
-                                                                        items,
-                                                                    child: Text(
-                                                                        items),
-                                                                  );
-                                                                }).toList(),
-                                                                // After selecting the desired option,it will
-                                                                // change button value to selected value
-                                                                onChanged: (String?
-                                                                    newValue) {
-                                                                  setState(() {
-                                                                    dropdownvalue2 =
-                                                                        newValue!;
-                                                                  });
-                                                                  int ind = all_dep
-                                                                      .indexOf(
-                                                                          dropdownvalue2!);
-                                                                  dropdownvalue22 =
-                                                                      all_depid[
-                                                                          ind];
-                                                                },
+                                                              const SizedBox(
+                                                                width: 30,
                                                               ),
-                                                            ),
-                                                          ],
-                                                        ),
-                                                      ],
+                                                              ProfileImagepickerupdate(
+                                                                image: newlist[
+                                                                        index]
+                                                                    .image,
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          TextFormField(
+                                                              keyboardType:
+                                                                  TextInputType
+                                                                      .text,
+                                                              controller:
+                                                                  _namefieldcontroller2,
+                                                              decoration:
+                                                                  const InputDecoration(
+                                                                hintText:
+                                                                    'Name',
+                                                              )),
+                                                          _dataofbirth(
+                                                              datetime2),
+                                                          Row(
+                                                            children: [
+                                                              const Text(
+                                                                  'Designation :'),
+                                                              const SizedBox(
+                                                                width: 10,
+                                                              ),
+                                                              DropdownButtonHideUnderline(
+                                                                child:
+                                                                    DropdownButton2<
+                                                                        String>(
+                                                                  key: _keydes,
+                                                                  dropdownDecoration:
+                                                                      BoxDecoration(
+                                                                          borderRadius:
+                                                                              BorderRadius.circular(10)),
+                                                                  dropdownDirection:
+                                                                      DropdownDirection
+                                                                          .left,
+                                                                  dropdownWidth:
+                                                                      200,
+                                                                  hint: const Text(
+                                                                      'Select'),
+                                                                  value:
+                                                                      dropdownvalue1,
+                                                                  icon: const Icon(
+                                                                      Icons
+                                                                          .keyboard_arrow_down),
+                                                                  items: all_des
+                                                                      .map((String
+                                                                          items) {
+                                                                    log(items);
+                                                                    return DropdownMenuItem(
+                                                                      value:
+                                                                          items,
+                                                                      child: Text(
+                                                                          items
+                                                                              .toString()),
+                                                                    );
+                                                                  }).toList(),
+                                                                  onChanged:
+                                                                      (String?
+                                                                          newValue) {
+                                                                    setState(
+                                                                        () {
+                                                                      dropdownvalue1 =
+                                                                          newValue!;
+                                                                    });
+                                                                    int ind = all_des
+                                                                        .indexOf(
+                                                                            dropdownvalue1!);
+                                                                    dropdownvalue11 =
+                                                                        all_desid[
+                                                                            ind];
+                                                                  },
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          Row(
+                                                            children: [
+                                                              const Text(
+                                                                  "Department :"),
+                                                              const SizedBox(
+                                                                width: 10,
+                                                              ),
+                                                              DropdownButtonHideUnderline(
+                                                                child:
+                                                                    DropdownButton2(
+                                                                  key: _keydep,
+                                                                  dropdownDecoration:
+                                                                      BoxDecoration(
+                                                                          borderRadius:
+                                                                              BorderRadius.circular(10)),
+                                                                  dropdownDirection:
+                                                                      DropdownDirection
+                                                                          .left,
+                                                                  dropdownWidth:
+                                                                      200,
+                                                                  hint: const Text(
+                                                                      'Select'),
+                                                                  value:
+                                                                      dropdownvalue2,
+                                                                  // Initial Value
+
+                                                                  // Down Arrow Icon
+                                                                  icon: const Icon(
+                                                                      Icons
+                                                                          .keyboard_arrow_down),
+
+                                                                  // Array list of items
+                                                                  items: all_dep
+                                                                      .map((String
+                                                                          items) {
+                                                                    return DropdownMenuItem(
+                                                                      value:
+                                                                          items,
+                                                                      child: Text(
+                                                                          items),
+                                                                    );
+                                                                  }).toList(),
+                                                                  // After selecting the desired option,it will
+                                                                  // change button value to selected value
+                                                                  onChanged:
+                                                                      (String?
+                                                                          newValue) {
+                                                                    setState(
+                                                                        () {
+                                                                      dropdownvalue2 =
+                                                                          newValue!;
+                                                                    });
+                                                                    int ind = all_dep
+                                                                        .indexOf(
+                                                                            dropdownvalue2!);
+                                                                    dropdownvalue22 =
+                                                                        all_depid[
+                                                                            ind];
+                                                                  },
+                                                                ),
+                                                              ),
+                                                            ],
+                                                          ),
+                                                          const SizedBox(
+                                                            height: 10,
+                                                          ),
+                                                          Column(
+                                                            crossAxisAlignment:
+                                                                CrossAxisAlignment
+                                                                    .center,
+                                                            children: [
+                                                              TextButton.icon(
+                                                                  onPressed:
+                                                                      () {
+                                                                    _getCurrentLocation(
+                                                                        setState);
+                                                                  },
+                                                                  icon: const Icon(
+                                                                      Icons
+                                                                          .fmd_good_sharp),
+                                                                  label: Text(
+                                                                    'Get Location',
+                                                                    style: GoogleFonts
+                                                                        .kreon(),
+                                                                  )),
+                                                              latitude != null
+                                                                  ? Align(
+                                                                      alignment:
+                                                                          Alignment
+                                                                              .center,
+                                                                      child:
+                                                                          Container(
+                                                                        child:
+                                                                            Column(
+                                                                          children: [
+                                                                            Row(
+                                                                              mainAxisAlignment: MainAxisAlignment.center,
+                                                                              children: [
+                                                                                Text(
+                                                                                  "Latitude : ",
+                                                                                  style: GoogleFonts.kreon(fontSize: 18, fontWeight: FontWeight.bold),
+                                                                                ),
+                                                                                Text(
+                                                                                  latitude!,
+                                                                                  style: GoogleFonts.kreon(),
+                                                                                )
+                                                                              ],
+                                                                            ),
+                                                                            Row(
+                                                                              mainAxisAlignment: MainAxisAlignment.center,
+                                                                              children: [
+                                                                                Text(
+                                                                                  'Longitude : ',
+                                                                                  style: GoogleFonts.kreon(fontSize: 18, fontWeight: FontWeight.bold),
+                                                                                ),
+                                                                                Text(
+                                                                                  longitude!,
+                                                                                  style: GoogleFonts.kreon(),
+                                                                                )
+                                                                              ],
+                                                                            )
+                                                                          ],
+                                                                        ),
+                                                                      ),
+                                                                    )
+                                                                  : Text(
+                                                                      'No location data',
+                                                                      style: GoogleFonts
+                                                                          .kreon(),
+                                                                    ),
+                                                            ],
+                                                          ),
+                                                        ],
+                                                      ),
                                                     ),
                                                   ),
                                                 ));

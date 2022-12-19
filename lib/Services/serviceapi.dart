@@ -1,5 +1,6 @@
 import 'dart:convert';
 import 'dart:developer';
+import 'dart:io';
 
 import 'package:crudapp/modal/department_modal.dart';
 import 'package:crudapp/modal/designation_modal.dart';
@@ -65,62 +66,77 @@ class ServiceApi {
     return null;
   }
 
-  Future create_employee(
-      {required String name,
-      required String desId,
-      required String depId,
-      required String dob,
-      required String token}) async {
+  Future create_employee({
+    required String name,
+    required String desId,
+    required String depId,
+    required String dob,
+    required String token,
+    required String image,
+    required String location,
+  }) async {
+    var na = DateTime.now().millisecondsSinceEpoch;
     final prefs = await SharedPreferences.getInstance();
-    final response = await http.post(
+    String filename = '$na.jpg';
+
+    var request = http.MultipartRequest(
+        'POST',
         Uri.parse(
-            'http://phpstack-598410-2859373.cloudwaysapps.com/api/employees'),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-        body: {
-          "name": name,
-          "designation_id": desId,
-          "department_id": depId,
-          "date_of_birth": dob
-        });
-    prefs.setInt('emp_createcode', response.statusCode);
+            'http://phpstack-598410-2859373.cloudwaysapps.com/api/employees'));
+    request.fields['name'] = name;
+    request.fields['designation_id'] = desId;
+    request.fields['department_id'] = depId;
+    request.fields['date_of_birth'] = dob;
+    request.fields['geo_location'] = location;
+    request.files.add(http.MultipartFile.fromBytes(
+        'image', File(image).readAsBytesSync(),
+        filename: filename));
+    request.headers['Authorization'] = 'Bearer $token';
+    var response = await request.send();
+
     if (response.statusCode == 200 || response.statusCode == 201) {
       log('Successfully post Data');
+      prefs.setInt('emp_createcode', response.statusCode);
     } else {
       log('Failed to PostData.');
-      log(response.statusCode.toString());
     }
     return null;
   }
 
-  Future update_employee(
-      {required String id,
-      required String name,
-      required String desId,
-      required String depId,
-      required String dob,
-      required String token}) async {
+  Future update_employee({
+    required String id,
+    required String name,
+    required String desId,
+    required String depId,
+    required String dob,
+    required String token,
+    required String image,
+    required String location,
+  }) async {
+    var na = DateTime.now().millisecondsSinceEpoch;
     final prefs = await SharedPreferences.getInstance();
-    log(id);
-    final response = await http.patch(
+    String filename = '$na.jpg';
+
+    var request = http.MultipartRequest(
+        'PUT',
         Uri.parse(
-            'http://phpstack-598410-2859373.cloudwaysapps.com/api/employees/$id'),
-        headers: {
-          'Authorization': 'Bearer $token',
-        },
-        body: {
-          "name": name,
-          "designation_id": desId,
-          "department_id": depId,
-          "date_of_birth": dob
-        });
-    prefs.setInt('emp_updatecode', response.statusCode);
+            'http://phpstack-598410-2859373.cloudwaysapps.com/api/employees/$id'));
+    request.fields['name'] = name;
+    request.fields['designation_id'] = desId;
+    request.fields['department_id'] = depId;
+    request.fields['date_of_birth'] = dob;
+    request.fields['geo_location'] = location;
+    request.files.add(http.MultipartFile.fromBytes(
+        'image', File(image).readAsBytesSync(),
+        filename: filename));
+    request.headers['Authorization'] = 'Bearer $token';
+    var response = await request.send();
+
     if (response.statusCode == 200 || response.statusCode == 201) {
       log('Successfully post Data');
+      prefs.setInt('emp_updatecode', response.statusCode);
     } else {
       log('Failed to PostData.');
-      log(response.statusCode.toString());
     }
     return null;
   }

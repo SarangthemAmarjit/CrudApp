@@ -69,6 +69,8 @@ class AppRouter extends _i9.RootStackRouter {
           dob: args.dob,
           desingnation: args.desingnation,
           department: args.department,
+          image: args.image,
+          location: args.location,
         ),
       );
     },
@@ -203,6 +205,8 @@ class EmployeeDetailRoute extends _i9.PageRouteInfo<EmployeeDetailRouteArgs> {
     required String dob,
     required String desingnation,
     required String department,
+    required String image,
+    required String location,
   }) : super(
           EmployeeDetailRoute.name,
           path: '/employee-detail-page',
@@ -212,6 +216,8 @@ class EmployeeDetailRoute extends _i9.PageRouteInfo<EmployeeDetailRouteArgs> {
             dob: dob,
             desingnation: desingnation,
             department: department,
+            image: image,
+            location: location,
           ),
         );
 
@@ -225,6 +231,8 @@ class EmployeeDetailRouteArgs {
     required this.dob,
     required this.desingnation,
     required this.department,
+    required this.image,
+    required this.location,
   });
 
   final _i10.Key? key;
@@ -237,9 +245,13 @@ class EmployeeDetailRouteArgs {
 
   final String department;
 
+  final String image;
+
+  final String location;
+
   @override
   String toString() {
-    return 'EmployeeDetailRouteArgs{key: $key, name: $name, dob: $dob, desingnation: $desingnation, department: $department}';
+    return 'EmployeeDetailRouteArgs{key: $key, name: $name, dob: $dob, desingnation: $desingnation, department: $department, image: $image, location: $location}';
   }
 }
 
