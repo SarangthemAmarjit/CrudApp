@@ -64,7 +64,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
 
   String? latitude;
   String? longitude;
-  String finallocation = '';
+  String? finallocation;
 
   String profileimage = '';
 
@@ -72,15 +72,24 @@ class _EmployeesPageState extends State<EmployeesPage> {
   void _getCurrentLocation(void Function(void Function()) setState) async {
     Position position = await _determinePosition();
     final prefs = await SharedPreferences.getInstance();
-    String image = prefs.getString('profileimage')!;
 
-    setState(() {
-      profileimage = image;
-      _position = position;
-      latitude = position.latitude.toString();
-      longitude = position.longitude.toString();
-      finallocation = "$latitude,$longitude";
-    });
+    if (prefs.containsKey('profileimage')) {
+      String image = prefs.getString('profileimage')!;
+      setState(() {
+        profileimage = image;
+        _position = position;
+        latitude = position.latitude.toString();
+        longitude = position.longitude.toString();
+        finallocation = "$latitude,$longitude";
+      });
+    } else {
+      setState(() {
+        _position = position;
+        latitude = position.latitude.toString();
+        longitude = position.longitude.toString();
+        finallocation = "$latitude,$longitude";
+      });
+    }
 
     log(profileimage.toString());
   }
@@ -258,6 +267,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
 
                                   dropdownvalue1 = null;
                                   dropdownvalue2 = null;
+                                  finallocation = null;
                                 });
                               },
                               child: const Text("CANCEL")),
@@ -277,7 +287,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                           dob: datetime,
                                           token: finaltoken,
                                           image: profileimage,
-                                          location: finallocation)
+                                          location: finallocation!)
                                       .whenComplete(() {
                                     getdata().whenComplete(() {
                                       EasyLoading.dismiss();
@@ -296,6 +306,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
 
                                     dropdownvalue1 = null;
                                     dropdownvalue2 = null;
+                                    finallocation = null;
                                   });
                                 },
                                 child: const Text("ADD")),
@@ -794,7 +805,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                                                       image:
                                                                           profileimage,
                                                                       location:
-                                                                          finallocation)
+                                                                          finallocation!)
                                                                   .whenComplete(
                                                                       () {
                                                                 Navigator.pop(
@@ -1023,7 +1034,8 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                                                     style: GoogleFonts
                                                                         .kreon(),
                                                                   )),
-                                                              latitude != null
+                                                              finallocation !=
+                                                                      null
                                                                   ? Align(
                                                                       alignment:
                                                                           Alignment
