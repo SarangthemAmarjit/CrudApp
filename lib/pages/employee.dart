@@ -10,13 +10,13 @@ import 'package:crudapp/refactor/imagepicker.dart';
 import 'package:crudapp/refactor/imagepicker2.dart';
 import 'package:crudapp/refactor/snackbar.dart';
 import 'package:crudapp/router/router.gr.dart';
+import 'package:dropdown_search/dropdown_search.dart';
 import 'package:flutter/material.dart';
 import 'package:datetime_picker_formfield/datetime_picker_formfield.dart';
 import 'package:flutter_easyloading/flutter_easyloading.dart';
 import 'package:geolocator/geolocator.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:intl/intl.dart';
-import 'package:dropdown_button2/dropdown_button2.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
 class EmployeesPage extends StatefulWidget {
@@ -58,6 +58,20 @@ class _EmployeesPageState extends State<EmployeesPage> {
     getdata();
   }
 
+  @override
+  void dispose() {
+    _namefieldcontroller.dispose();
+    _namefieldcontroller2.dispose();
+    super.dispose();
+  }
+
+  @override
+  void setState(fn) {
+    if (mounted) {
+      super.setState(fn);
+    }
+  }
+
   int del_statuscode = 0;
   int update_statuscode = 0;
   int create_statuscode = 0;
@@ -69,7 +83,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
   String profileimage = '';
 
   Position? _position;
-  void _getCurrentLocation(void Function(void Function()) setState) async {
+  Future _getCurrentLocation(void Function(void Function()) setState) async {
     Position position = await _determinePosition();
     final prefs = await SharedPreferences.getInstance();
 
@@ -82,6 +96,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
         longitude = position.longitude.toString();
         finallocation = "$latitude,$longitude";
       });
+      log(clicked.toString());
     } else {
       setState(() {
         _position = position;
@@ -89,11 +104,19 @@ class _EmployeesPageState extends State<EmployeesPage> {
         longitude = position.longitude.toString();
         finallocation = "$latitude,$longitude";
       });
+      log(clicked.toString());
     }
 
     log(profileimage.toString());
   }
 
+  bool clicked = false;
+  Container conta = Container(
+    child: Text(
+      'No Location Data',
+      style: GoogleFonts.kreon(),
+    ),
+  );
   Future<Position> _determinePosition() async {
     LocationPermission permission;
     permission = await Geolocator.checkPermission();
@@ -186,8 +209,25 @@ class _EmployeesPageState extends State<EmployeesPage> {
     for (var element in newlist3) {
       all_dep.add(element.name.toString());
     }
-    log(all_depid.toString());
-    log(all_desid.toString());
+    log(all_dep.toString());
+    log(all_des.toString());
+  }
+
+  Future getdata2() async {
+    final prefs = await SharedPreferences.getInstance();
+    String tokken = prefs.getString('tokken')!;
+    final datafinal = await ServiceApi().Get_employee(token: tokken);
+    final datafinal2 = await ServiceApi().Get_designation(token: tokken);
+    final datafinal3 = await ServiceApi().Get_department(token: tokken);
+    setState(() {
+      newlist = datafinal!;
+      newlist2 = datafinal2!;
+      newlist3 = datafinal3!;
+      finaltoken = tokken;
+    });
+
+    log(all_dep.toString());
+    log(all_des.toString());
   }
 
   Widget _dataofbirth(String dob) {
@@ -244,6 +284,8 @@ class _EmployeesPageState extends State<EmployeesPage> {
         ),
         icon: const Icon(Icons.add),
         onPressed: (() {
+          log(all_dep.toString());
+          log(all_des.toString());
           showDialog(
             context: context,
             builder: (cnt) {
@@ -267,7 +309,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
 
                                   dropdownvalue1 = null;
                                   dropdownvalue2 = null;
-                                  finallocation = null;
+                                  _position = null;
                                 });
                               },
                               child: const Text("CANCEL")),
@@ -277,37 +319,54 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                 style: ElevatedButton.styleFrom(
                                     backgroundColor: Colors.green),
                                 onPressed: () async {
-                                  Navigator.pop(context);
                                   EasyLoading.show(status: 'Adding..');
-                                  await ServiceApi()
-                                      .create_employee(
-                                          name: _namefieldcontroller.text,
-                                          desId: dropdownvalue11!,
-                                          depId: dropdownvalue22!,
-                                          dob: datetime,
-                                          token: finaltoken,
-                                          image: profileimage,
-                                          location: finallocation!)
-                                      .whenComplete(() {
-                                    getdata().whenComplete(() {
-                                      EasyLoading.dismiss();
-                                      getcreate_status();
+                                  if (_namefieldcontroller.text.isEmpty ||
+                                      dropdownvalue11 == null ||
+                                      dropdownvalue22 == null ||
+                                      datetime.isEmpty ||
+                                      profileimage.isEmpty ||
+                                      finallocation == null) {
+                                    EasyLoading.dismiss();
+                                    context.router.pop();
+                                    CustomSnackBar(
+                                        context,
+                                        Text(
+                                          'All Fields Are Mandatory',
+                                          style: GoogleFonts.kreon(),
+                                        ),
+                                        Colors.red);
+                                  } else {
+                                    await ServiceApi()
+                                        .create_employee(
+                                            name: _namefieldcontroller.text,
+                                            desId: dropdownvalue11!,
+                                            depId: dropdownvalue22!,
+                                            dob: datetime,
+                                            token: finaltoken,
+                                            image: profileimage,
+                                            location: finallocation!)
+                                        .whenComplete(() {
+                                      getdata2().whenComplete(() {
+                                        _namefieldcontroller.clear();
+                                        all_desid = [];
+                                        all_depid = [];
+                                        all_dep = [];
+                                        all_des = [];
+                                        _position = null;
+                                        datetime2 = '';
+
+                                        dropdownvalue1 = null;
+                                        dropdownvalue2 = null;
+                                        setState(() {});
+
+                                        getcreate_status();
+                                        getdata();
+                                        EasyLoading.dismiss();
+                                        context.router.pop();
+                                      });
                                     });
-                                  });
-                                  log(create_statuscode.toString());
-
-                                  setState(() {
-                                    all_desid = [];
-                                    all_depid = [];
-                                    all_dep = [];
-                                    all_des = [];
-                                    _namefieldcontroller.clear();
-                                    datetime2 = '';
-
-                                    dropdownvalue1 = null;
-                                    dropdownvalue2 = null;
-                                    finallocation = null;
-                                  });
+                                    log(create_statuscode.toString());
+                                  }
                                 },
                                 child: const Text("ADD")),
                           )
@@ -359,61 +418,35 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                     border: Border.all(
                                         color: const Color.fromARGB(
                                             255, 225, 222, 222))),
-                                child: FittedBox(
-                                  child: Row(
-                                    mainAxisAlignment:
-                                        MainAxisAlignment.spaceBetween,
-                                    children: [
-                                      Text(
-                                        'Designation :',
-                                        style: GoogleFonts.kreon(fontSize: 16),
-                                      ),
-                                      Padding(
-                                        padding:
-                                            const EdgeInsets.only(left: 15),
-                                        child: DropdownButtonHideUnderline(
-                                          child: DropdownButton2(
-                                            dropdownPadding:
-                                                const EdgeInsets.only(left: 25),
-                                            dropdownDecoration: BoxDecoration(
-                                                borderRadius:
-                                                    BorderRadius.circular(10)),
-                                            dropdownDirection:
-                                                DropdownDirection.left,
-                                            dropdownWidth: 250,
-                                            hint: Text(
-                                              'Select',
-                                              style: GoogleFonts.kreon(
-                                                  fontSize: 16),
-                                            ),
-                                            value: dropdownvalue1,
-                                            icon: const Icon(
-                                                Icons.keyboard_arrow_down),
-                                            items: all_des.map((String items) {
-                                              log(items);
-                                              return DropdownMenuItem(
-                                                value: items,
-                                                child: Text(
-                                                  items,
-                                                  style: GoogleFonts.kreon(
-                                                      fontSize: 16),
-                                                ),
-                                              );
-                                            }).toList(),
-                                            onChanged: (String? newValue) {
-                                              setState(() {
-                                                dropdownvalue1 =
-                                                    newValue as String;
-                                              });
-                                              int ind = all_des
-                                                  .indexOf(dropdownvalue1!);
-                                              dropdownvalue11 = all_desid[ind];
-                                            },
-                                          ),
-                                        ),
-                                      ),
-                                    ],
+                                child: DropdownSearch<String>(
+                                  popupProps: PopupProps.menu(
+                                    searchFieldProps: const TextFieldProps(
+                                        decoration: InputDecoration(
+                                            border: OutlineInputBorder(),
+                                            constraints:
+                                                BoxConstraints(maxHeight: 40))),
+                                    constraints: BoxConstraints.tight(
+                                        const Size(250, 250)),
+                                    showSearchBox: true,
+                                    showSelectedItems: true,
                                   ),
+                                  items: all_des,
+                                  dropdownDecoratorProps:
+                                      DropDownDecoratorProps(
+                                    dropdownSearchDecoration: InputDecoration(
+                                      hintStyle: GoogleFonts.kreon(),
+                                      labelStyle: GoogleFonts.kreon(),
+                                      labelText: "Designation :",
+                                      hintText: "Choose Your Designation",
+                                    ),
+                                  ),
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      dropdownvalue1 = newValue as String;
+                                    });
+                                    int ind = all_des.indexOf(dropdownvalue1!);
+                                    dropdownvalue11 = all_desid[ind];
+                                  },
                                 ),
                               ),
                               const SizedBox(
@@ -429,66 +462,35 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                     border: Border.all(
                                         color: const Color.fromARGB(
                                             255, 225, 222, 222))),
-                                child: Row(
-                                  mainAxisAlignment:
-                                      MainAxisAlignment.spaceBetween,
-                                  children: [
-                                    Text(
-                                      "Department :",
-                                      style: GoogleFonts.kreon(fontSize: 16),
+                                child: DropdownSearch<String>(
+                                  popupProps: PopupProps.menu(
+                                    searchFieldProps: const TextFieldProps(
+                                        decoration: InputDecoration(
+                                            border: OutlineInputBorder(),
+                                            constraints:
+                                                BoxConstraints(maxHeight: 40))),
+                                    constraints: BoxConstraints.tight(
+                                        const Size(250, 250)),
+                                    showSearchBox: true,
+                                    showSelectedItems: true,
+                                  ),
+                                  items: all_dep,
+                                  dropdownDecoratorProps:
+                                      DropDownDecoratorProps(
+                                    dropdownSearchDecoration: InputDecoration(
+                                      hintStyle: GoogleFonts.kreon(),
+                                      labelStyle: GoogleFonts.kreon(),
+                                      labelText: "Department :",
+                                      hintText: "Choose Your Department",
                                     ),
-                                    Padding(
-                                      padding: const EdgeInsets.only(left: 15),
-                                      child: DropdownButtonHideUnderline(
-                                        child: DropdownButton2(
-                                          dropdownDecoration: BoxDecoration(
-                                              borderRadius:
-                                                  BorderRadius.circular(10)),
-
-                                          dropdownPadding:
-                                              const EdgeInsets.only(left: 25),
-                                          dropdownDirection:
-                                              DropdownDirection.left,
-                                          dropdownWidth: 250,
-                                          hint: Text(
-                                            'Select',
-                                            style: GoogleFonts.kreon(),
-                                          ),
-                                          value: dropdownvalue2,
-                                          // Initial Value
-
-                                          // Down Arrow Icon
-                                          icon: const Padding(
-                                            padding: EdgeInsets.only(left: 25),
-                                            child:
-                                                Icon(Icons.keyboard_arrow_down),
-                                          ),
-
-                                          // Array list of items
-                                          items: all_dep.map((String items) {
-                                            return DropdownMenuItem(
-                                              value: items,
-                                              child: Text(
-                                                items,
-                                                style: GoogleFonts.kreon(
-                                                    fontSize: 16),
-                                              ),
-                                            );
-                                          }).toList(),
-                                          // After selecting the desired option,it will
-                                          // change button value to selected value
-                                          onChanged: (newValue) {
-                                            setState(() {
-                                              dropdownvalue2 = newValue!;
-                                            });
-                                            int ind = all_dep
-                                                .indexOf(dropdownvalue2!);
-                                            dropdownvalue22 = all_depid[ind];
-                                          },
-                                        ),
-                                      ),
-                                    ),
-                                  ],
+                                  ),
+                                  onChanged: (String? newValue) {
+                                    setState(() {
+                                      dropdownvalue2 = newValue as String;
+                                    });
+                                    int ind = all_dep.indexOf(dropdownvalue2!);
+                                    dropdownvalue22 = all_depid[ind];
+                                  },
                                 ),
                               ),
                               const SizedBox(
@@ -499,6 +501,11 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                 children: [
                                   TextButton.icon(
                                       onPressed: () {
+                                        setState(
+                                          () {
+                                            clicked = true;
+                                          },
+                                        );
                                         _getCurrentLocation(setState);
                                       },
                                       icon: const Icon(Icons.fmd_good_sharp),
@@ -552,10 +559,9 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                             ),
                                           ),
                                         )
-                                      : Text(
-                                          'No location data',
-                                          style: GoogleFonts.kreon(),
-                                        ),
+                                      : clicked
+                                          ? const CircularProgressIndicator()
+                                          : conta
                                 ],
                               ),
                             ],
@@ -853,7 +859,7 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                                 content: SingleChildScrollView(
                                                   child: Form(
                                                     child: SizedBox(
-                                                      height: 465,
+                                                      height: 485,
                                                       child: Column(
                                                         children: [
                                                           Row(
@@ -890,131 +896,299 @@ class _EmployeesPageState extends State<EmployeesPage> {
                                                               )),
                                                           _dataofbirth(
                                                               datetime2),
-                                                          Row(
-                                                            children: [
-                                                              const Text(
-                                                                  'Designation :'),
-                                                              const SizedBox(
-                                                                width: 10,
+                                                          Container(
+                                                            width:
+                                                                MediaQuery.of(
+                                                                        context)
+                                                                    .size
+                                                                    .width,
+                                                            padding:
+                                                                const EdgeInsets
+                                                                        .symmetric(
+                                                                    horizontal:
+                                                                        13),
+                                                            decoration: BoxDecoration(
+                                                                color: const Color
+                                                                        .fromARGB(
+                                                                    255,
+                                                                    240,
+                                                                    237,
+                                                                    237),
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            12),
+                                                                border: Border.all(
+                                                                    color: const Color
+                                                                            .fromARGB(
+                                                                        255,
+                                                                        225,
+                                                                        222,
+                                                                        222))),
+                                                            child:
+                                                                DropdownSearch<
+                                                                    String>(
+                                                              selectedItem:
+                                                                  dropdownvalue1,
+                                                              popupProps:
+                                                                  PopupProps
+                                                                      .menu(
+                                                                searchFieldProps: const TextFieldProps(
+                                                                    decoration: InputDecoration(
+                                                                        border:
+                                                                            OutlineInputBorder(),
+                                                                        constraints:
+                                                                            BoxConstraints(maxHeight: 40))),
+                                                                constraints:
+                                                                    BoxConstraints.tight(
+                                                                        const Size(
+                                                                            250,
+                                                                            250)),
+                                                                showSearchBox:
+                                                                    true,
+                                                                showSelectedItems:
+                                                                    true,
                                                               ),
-                                                              DropdownButtonHideUnderline(
-                                                                child:
-                                                                    DropdownButton2<
-                                                                        String>(
-                                                                  key: _keydes,
-                                                                  dropdownDecoration:
-                                                                      BoxDecoration(
-                                                                          borderRadius:
-                                                                              BorderRadius.circular(10)),
-                                                                  dropdownDirection:
-                                                                      DropdownDirection
-                                                                          .left,
-                                                                  dropdownWidth:
-                                                                      200,
-                                                                  hint: const Text(
-                                                                      'Select'),
-                                                                  value:
-                                                                      dropdownvalue1,
-                                                                  icon: const Icon(
-                                                                      Icons
-                                                                          .keyboard_arrow_down),
-                                                                  items: all_des
-                                                                      .map((String
-                                                                          items) {
-                                                                    log(items);
-                                                                    return DropdownMenuItem(
-                                                                      value:
-                                                                          items,
-                                                                      child: Text(
-                                                                          items
-                                                                              .toString()),
-                                                                    );
-                                                                  }).toList(),
-                                                                  onChanged:
-                                                                      (String?
-                                                                          newValue) {
-                                                                    setState(
-                                                                        () {
-                                                                      dropdownvalue1 =
-                                                                          newValue!;
-                                                                    });
-                                                                    int ind = all_des
-                                                                        .indexOf(
-                                                                            dropdownvalue1!);
-                                                                    dropdownvalue11 =
-                                                                        all_desid[
-                                                                            ind];
-                                                                  },
+                                                              items: all_des,
+                                                              dropdownDecoratorProps:
+                                                                  DropDownDecoratorProps(
+                                                                dropdownSearchDecoration:
+                                                                    InputDecoration(
+                                                                  hintStyle:
+                                                                      GoogleFonts
+                                                                          .kreon(),
+                                                                  labelStyle:
+                                                                      GoogleFonts
+                                                                          .kreon(),
+                                                                  labelText:
+                                                                      "Designation :",
+                                                                  hintText:
+                                                                      "Choose Your Designation",
                                                                 ),
                                                               ),
-                                                            ],
-                                                          ),
-                                                          Row(
-                                                            children: [
-                                                              const Text(
-                                                                  "Department :"),
-                                                              const SizedBox(
-                                                                width: 10,
-                                                              ),
-                                                              DropdownButtonHideUnderline(
-                                                                child:
-                                                                    DropdownButton2(
-                                                                  key: _keydep,
-                                                                  dropdownDecoration:
-                                                                      BoxDecoration(
-                                                                          borderRadius:
-                                                                              BorderRadius.circular(10)),
-                                                                  dropdownDirection:
-                                                                      DropdownDirection
-                                                                          .left,
-                                                                  dropdownWidth:
-                                                                      200,
-                                                                  hint: const Text(
-                                                                      'Select'),
-                                                                  value:
-                                                                      dropdownvalue2,
-                                                                  // Initial Value
-
-                                                                  // Down Arrow Icon
-                                                                  icon: const Icon(
-                                                                      Icons
-                                                                          .keyboard_arrow_down),
-
-                                                                  // Array list of items
-                                                                  items: all_dep
-                                                                      .map((String
-                                                                          items) {
-                                                                    return DropdownMenuItem(
-                                                                      value:
-                                                                          items,
-                                                                      child: Text(
-                                                                          items),
-                                                                    );
-                                                                  }).toList(),
-                                                                  // After selecting the desired option,it will
-                                                                  // change button value to selected value
-                                                                  onChanged:
-                                                                      (String?
-                                                                          newValue) {
-                                                                    setState(
-                                                                        () {
-                                                                      dropdownvalue2 =
-                                                                          newValue!;
-                                                                    });
-                                                                    int ind = all_dep
-                                                                        .indexOf(
-                                                                            dropdownvalue2!);
-                                                                    dropdownvalue22 =
-                                                                        all_depid[
-                                                                            ind];
-                                                                  },
-                                                                ),
-                                                              ),
-                                                            ],
+                                                              onChanged: (String?
+                                                                  newValue) {
+                                                                setState(() {
+                                                                  dropdownvalue1 =
+                                                                      newValue
+                                                                          as String;
+                                                                });
+                                                                int ind = all_des
+                                                                    .indexOf(
+                                                                        dropdownvalue1!);
+                                                                dropdownvalue11 =
+                                                                    all_desid[
+                                                                        ind];
+                                                              },
+                                                            ),
                                                           ),
                                                           const SizedBox(
                                                             height: 10,
                                                           ),
+                                                          Container(
+                                                            padding:
+                                                                const EdgeInsets
+                                                                        .symmetric(
+                                                                    horizontal:
+                                                                        13),
+                                                            decoration: BoxDecoration(
+                                                                color: const Color
+                                                                        .fromARGB(
+                                                                    255,
+                                                                    240,
+                                                                    237,
+                                                                    237),
+                                                                borderRadius:
+                                                                    BorderRadius
+                                                                        .circular(
+                                                                            12),
+                                                                border: Border.all(
+                                                                    color: const Color
+                                                                            .fromARGB(
+                                                                        255,
+                                                                        225,
+                                                                        222,
+                                                                        222))),
+                                                            child:
+                                                                DropdownSearch<
+                                                                    String>(
+                                                              selectedItem:
+                                                                  dropdownvalue2,
+                                                              popupProps:
+                                                                  PopupProps
+                                                                      .menu(
+                                                                searchFieldProps: const TextFieldProps(
+                                                                    decoration: InputDecoration(
+                                                                        border:
+                                                                            OutlineInputBorder(),
+                                                                        constraints:
+                                                                            BoxConstraints(maxHeight: 40))),
+                                                                constraints:
+                                                                    BoxConstraints.tight(
+                                                                        const Size(
+                                                                            250,
+                                                                            250)),
+                                                                showSearchBox:
+                                                                    true,
+                                                                showSelectedItems:
+                                                                    true,
+                                                              ),
+                                                              items: all_dep,
+                                                              dropdownDecoratorProps:
+                                                                  DropDownDecoratorProps(
+                                                                dropdownSearchDecoration:
+                                                                    InputDecoration(
+                                                                  hintStyle:
+                                                                      GoogleFonts
+                                                                          .kreon(),
+                                                                  labelStyle:
+                                                                      GoogleFonts
+                                                                          .kreon(),
+                                                                  labelText:
+                                                                      "Department :",
+                                                                  hintText:
+                                                                      "Choose Your Department",
+                                                                ),
+                                                              ),
+                                                              onChanged: (String?
+                                                                  newValue) {
+                                                                setState(() {
+                                                                  dropdownvalue2 =
+                                                                      newValue
+                                                                          as String;
+                                                                });
+                                                                int ind = all_dep
+                                                                    .indexOf(
+                                                                        dropdownvalue2!);
+                                                                dropdownvalue22 =
+                                                                    all_depid[
+                                                                        ind];
+                                                              },
+                                                            ),
+                                                          ),
+                                                          // Row(
+                                                          //   children: [
+                                                          //     const Text(
+                                                          //         'Designation :'),
+                                                          //     const SizedBox(
+                                                          //       width: 10,
+                                                          //     ),
+                                                          //     DropdownButtonHideUnderline(
+                                                          //       child:
+                                                          //           DropdownButton2<
+                                                          //               String>(
+                                                          //         key: _keydes,
+                                                          //         dropdownDecoration:
+                                                          //             BoxDecoration(
+                                                          //                 borderRadius:
+                                                          //                     BorderRadius.circular(10)),
+                                                          //         dropdownDirection:
+                                                          //             DropdownDirection
+                                                          //                 .left,
+                                                          //         dropdownWidth:
+                                                          //             200,
+                                                          //         hint: const Text(
+                                                          //             'Select'),
+                                                          //         value:
+                                                          //             dropdownvalue1,
+                                                          //         icon: const Icon(
+                                                          //             Icons
+                                                          //                 .keyboard_arrow_down),
+                                                          //         items: all_des
+                                                          //             .map((String
+                                                          //                 items) {
+                                                          //           log(items);
+                                                          //           return DropdownMenuItem(
+                                                          //             value:
+                                                          //                 items,
+                                                          //             child: Text(
+                                                          //                 items
+                                                          //                     .toString()),
+                                                          //           );
+                                                          //         }).toList(),
+                                                          //         onChanged:
+                                                          //             (String?
+                                                          //                 newValue) {
+                                                          //           setState(
+                                                          //               () {
+                                                          //             dropdownvalue1 =
+                                                          //                 newValue!;
+                                                          //           });
+                                                          //           int ind = all_des
+                                                          //               .indexOf(
+                                                          //                   dropdownvalue1!);
+                                                          //           dropdownvalue11 =
+                                                          //               all_desid[
+                                                          //                   ind];
+                                                          //         },
+                                                          //       ),
+                                                          //     ),
+                                                          //   ],
+                                                          // ),
+                                                          // Row(
+                                                          //   children: [
+                                                          //     const Text(
+                                                          //         "Department :"),
+                                                          //     const SizedBox(
+                                                          //       width: 10,
+                                                          //     ),
+                                                          //     DropdownButtonHideUnderline(
+                                                          //       child:
+                                                          //           DropdownButton2(
+                                                          //         key: _keydep,
+                                                          //         dropdownDecoration:
+                                                          //             BoxDecoration(
+                                                          //                 borderRadius:
+                                                          //                     BorderRadius.circular(10)),
+                                                          //         dropdownDirection:
+                                                          //             DropdownDirection
+                                                          //                 .left,
+                                                          //         dropdownWidth:
+                                                          //             200,
+                                                          //         hint: const Text(
+                                                          //             'Select'),
+                                                          //         value:
+                                                          //             dropdownvalue2,
+                                                          //         // Initial Value
+
+                                                          //         // Down Arrow Icon
+                                                          //         icon: const Icon(
+                                                          //             Icons
+                                                          //                 .keyboard_arrow_down),
+
+                                                          //         // Array list of items
+                                                          //         items: all_dep
+                                                          //             .map((String
+                                                          //                 items) {
+                                                          //           return DropdownMenuItem(
+                                                          //             value:
+                                                          //                 items,
+                                                          //             child: Text(
+                                                          //                 items),
+                                                          //           );
+                                                          //         }).toList(),
+                                                          //         // After selecting the desired option,it will
+                                                          //         // change button value to selected value
+                                                          //         onChanged:
+                                                          //             (String?
+                                                          //                 newValue) {
+                                                          //           setState(
+                                                          //               () {
+                                                          //             dropdownvalue2 =
+                                                          //                 newValue!;
+                                                          //           });
+                                                          //           int ind = all_dep
+                                                          //               .indexOf(
+                                                          //                   dropdownvalue2!);
+                                                          //           dropdownvalue22 =
+                                                          //               all_depid[
+                                                          //                   ind];
+                                                          //         },
+                                                          //       ),
+                                                          //     ),
+                                                          //   ],
+                                                          // ),
+
                                                           Column(
                                                             crossAxisAlignment:
                                                                 CrossAxisAlignment

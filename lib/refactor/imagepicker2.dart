@@ -28,8 +28,8 @@ class _AadhaarImagePickerState extends State<ProfileImagepickerupdate> {
                 child: Image.file(
                   fit: BoxFit.cover,
                   image!,
-                  height: 80,
-                  width: 80,
+                  height: 70,
+                  width: 70,
                 ),
               )
             : ClipOval(
@@ -49,8 +49,8 @@ class _AadhaarImagePickerState extends State<ProfileImagepickerupdate> {
                     );
                   },
                   'http://phpstack-598410-2859373.cloudwaysapps.com/${widget.image}',
-                  height: 80,
-                  width: 80,
+                  height: 70,
+                  width: 70,
                 ),
               ),
         const SizedBox(

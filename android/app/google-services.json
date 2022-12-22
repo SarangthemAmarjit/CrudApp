@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1094986573718",
+    "project_id": "messagesending-aacfd",
+    "storage_bucket": "messagesending-aacfd.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1094986573718:android:c35ab3abecdd6703155fb7",
+        "android_client_info": {
+          "package_name": "com.example.crudapp"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1094986573718-4t7765ggs4j77vrrblueev92pq4ob9s8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCJpeOF-tghsomg4odmdFX5wtbzK3INFgs"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1094986573718-4t7765ggs4j77vrrblueev92pq4ob9s8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
